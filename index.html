@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>F&O Analytics Pro - StockPro Screener</title>
+  <title>F&O Analytics Pro</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -23,8 +23,6 @@
             background: '#030712',
             card: '#090d16',
             border: '#1e293b',
-            itm: 'rgba(234, 179, 8, 0.04)',
-            itmBorder: 'rgba(234, 179, 8, 0.15)',
           }
         }
       }
@@ -37,10 +35,10 @@
       font-family: 'Inter', sans-serif;
       background-color: #030712;
     }
-    /* Webkit scrollbar customization */
+    /* Smooth CSS Gradients & Scrollbars */
     ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-track {
       background: #030712;
@@ -54,705 +52,1039 @@
     }
   </style>
 </head>
-<body class="text-slate-100 min-h-screen flex flex-col lg:flex-row antialiased overflow-hidden">
+<body class="text-slate-100 min-h-screen antialiased selection:bg-emerald-500/20 selection:text-emerald-300">
 
-  <!-- Mobile Header -->
-  <header class="lg:hidden bg-[#090d16] border-b border-slate-800 px-4 py-3.5 flex items-center justify-between z-30">
-    <div class="flex items-center gap-2">
-      <div class="bg-emerald-500/10 p-1.5 rounded-lg border border-emerald-500/25">
-        <i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
+  <!-- TOP BAR NAVIGATION -->
+  <nav class="sticky top-0 bg-[#030712]/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3.5 flex items-center justify-between z-50">
+    <div class="flex items-center gap-2.5">
+      <div class="bg-emerald-500/15 p-1.5 rounded-lg border border-emerald-500/20">
+        <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
       </div>
-      <span class="font-bold text-base tracking-tight bg-gradient-to-r from-white via-slate-100 to-emerald-400 bg-clip-text text-transparent">F&O Analytics Pro</span>
+      <span class="font-extrabold text-base tracking-tight bg-gradient-to-r from-white via-slate-100 to-emerald-400 bg-clip-text text-transparent">F&O Analytics Pro</span>
     </div>
-    <button id="mobileMenuBtn" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg">
-      <i data-lucide="menu" class="w-5 h-5"></i>
-    </button>
-  </header>
-
-  <!-- Navigation Sidebar -->
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-[#090d16] border-r border-slate-800/60 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 lg:static lg:h-screen transition-transform duration-200 ease-in-out">
-    <div>
-      <!-- Sidebar Header -->
-      <div class="p-5 border-b border-slate-800/50 flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
-            <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
-          </div>
-          <div>
-            <span class="font-extrabold text-sm tracking-tight block text-white">F&O Analytics Pro</span>
-            <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">StockPro Screener</span>
-          </div>
-        </div>
-        <button id="closeMobileMenuBtn" class="lg:hidden p-1 text-slate-400 hover:text-white rounded-lg">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <!-- Navigation Links -->
-      <nav class="p-4 space-y-1">
-        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 font-medium text-xs transition-all">
-          <span class="flex items-center gap-3">
-            <i data-lucide="layout-grid" class="w-4 h-4"></i>
-            <span>Dashboard</span>
-          </span>
-          <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
-        </button>
-
-        <button onclick="switchView('option-chain')" id="nav-option-chain" class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 font-medium text-xs transition-all">
-          <span class="flex items-center gap-3">
-            <i data-lucide="align-justify" class="w-4 h-4"></i>
-            <span>Option Chain</span>
-          </span>
-        </button>
-
-        <button onclick="switchView('oi-multi')" id="nav-oi-multi" class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 font-medium text-xs transition-all">
-          <span class="flex items-center gap-3">
-            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-            <span>OI Multi-Strike</span>
-          </span>
-        </button>
-
-        <button onclick="switchView('screener')" id="nav-screener" class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 font-medium text-xs transition-all">
-          <span class="flex items-center gap-3">
-            <i data-lucide="sliders" class="w-4 h-4"></i>
-            <span>F&O Screener</span>
-          </span>
-        </button>
-
-        <button onclick="switchView('fii-dii')" id="nav-fii-dii" class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 font-medium text-xs transition-all">
-          <span class="flex items-center gap-3">
-            <i data-lucide="wallet" class="w-4 h-4"></i>
-            <span>FII / DII Flow</span>
-          </span>
-        </button>
-      </nav>
+    
+    <!-- Central Search Input -->
+    <div class="hidden md:flex items-center relative w-80">
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+        <i data-lucide="search" class="w-4 h-4 text-slate-500"></i>
+      </span>
+      <input type="text" placeholder="Search indices, derivatives, options..." class="w-full pl-9 pr-4 py-1.5 bg-[#090d16] border border-slate-800 rounded-xl text-xs text-slate-300 placeholder-slate-500 focus:outline-none focus:border-slate-700 transition-all">
     </div>
 
-    <!-- Sidebar Footer Details -->
-    <div class="p-4 border-t border-slate-800/50 space-y-3 bg-[#060a12]">
-      <div class="flex items-center justify-between text-xs text-slate-400">
-        <span>Subscribed: <strong class="text-emerald-400 font-medium">Enterprise</strong></span>
-        <span class="text-[9px] uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded-md font-semibold">Active</span>
-      </div>
-      <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/20 border border-slate-800/50">
+    <!-- Actions -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 text-xs">
         <span class="relative flex h-2 w-2">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
-        <div class="text-[10px]">
-          <p class="font-semibold text-slate-200">NSE Live Analytics Feed</p>
-          <p class="text-slate-500">Connected</p>
-        </div>
+        <span class="text-slate-400 font-medium">MARKET LIVE</span>
       </div>
+      <button class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-lg shadow-blue-600/10">
+        Access Pro Terminal
+      </button>
     </div>
-  </aside>
+  </nav>
 
-  <!-- Mobile Overlay -->
-  <div id="overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+  <!-- WORKSPACE WRAPPER -->
+  <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 space-y-20">
 
-  <!-- Content Workspace -->
-  <div class="flex-1 flex flex-col h-screen overflow-hidden bg-[#030712]">
-    
-    <!-- Top Context & Index Ticker Bar -->
-    <section class="border-b border-slate-800 bg-[#090d16]/80 backdrop-blur-md px-4 lg:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 z-10 flex-shrink-0">
-      
-      <!-- Live Tick Tickers -->
-      <div class="flex flex-wrap items-center gap-x-6 gap-y-1.5 w-full sm:w-auto">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-slate-400">NIFTY</span>
-          <span id="ticker-nifty" class="text-xs font-bold text-emerald-400">22,453.80</span>
-          <span class="text-[10px] text-emerald-500/80 font-medium">+0.58%</span>
-        </div>
-        <div class="w-px h-3.5 bg-slate-800 hidden md:block"></div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-slate-400">BANKNIFTY</span>
-          <span id="ticker-banknifty" class="text-xs font-bold text-emerald-400">47,840.15</span>
-          <span class="text-[10px] text-emerald-500/80 font-medium">+0.72%</span>
-        </div>
-        <div class="w-px h-3.5 bg-slate-800 hidden md:block"></div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-slate-400">INDIA VIX</span>
-          <span id="ticker-vix" class="text-xs font-bold text-rose-400">13.42</span>
-          <span class="text-[10px] text-rose-500/80 font-medium">-3.15%</span>
+    <!-- HERO SECTION -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div class="space-y-6">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] uppercase font-extrabold text-emerald-400 tracking-wider">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> analytics
+        </span>
+        <h1 class="text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white">
+          The financial world in full focus built on next-gen technology
+        </h1>
+        <p class="text-sm text-slate-400 leading-relaxed max-w-lg">
+          F&O Analytics Pro delivers institutional-grade derivatives intelligence with sub-millisecond market data streaming, advanced options Greeks calculations, and AI-powered predictive models. Our platform processes over 2 million data points per second.
+        </p>
+        <div class="flex items-center gap-4 pt-2">
+          <button class="bg-[#090d16] border border-slate-800 hover:border-slate-700 text-slate-200 font-semibold text-xs px-5 py-3 rounded-xl transition-all">
+            Request a Demo
+          </button>
         </div>
       </div>
 
-      <!-- Live Filters & Selectors -->
-      <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-        <select id="underlyingSelect" class="bg-[#030712] border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-1.5 focus:outline-none focus:border-slate-700 font-medium">
-          <option value="NIFTY">NIFTY</option>
-          <option value="BANKNIFTY">BANKNIFTY</option>
-          <option value="FINNIFTY">FINNIFTY</option>
-        </select>
-        
-        <select id="expirySelect" class="bg-[#030712] border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-1.5 focus:outline-none focus:border-slate-700 font-medium">
-          <option value="11-Jun-2026">11 Jun 2026</option>
-          <option value="18-Jun-2026">18 Jun 2026</option>
-          <option value="25-Jun-2026">25 Jun 2026</option>
-        </select>
-
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-[#030712] border border-slate-800 text-xs text-slate-400 hover:text-white rounded-xl font-medium transition-all">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span>Auto</span>
-        </button>
+      <!-- Hero Dashboard Visual Graphic -->
+      <div class="bg-[#090d16] border border-slate-800 p-5 rounded-3xl relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/5 via-transparent to-transparent opacity-50"></div>
+        <div class="relative space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="text-[10px] text-slate-500 font-mono ml-2">F&O Analytics Pro Terminal v3.1</span>
+            </div>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded font-mono">LIVE FEED</span>
+          </div>
+          <!-- Miniature Chart Mockup inside Hero -->
+          <div class="h-44">
+            <canvas id="heroMiniChart"></canvas>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Workspace Viewports Container -->
-    <main class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+    <!-- Sub-navigation links bar -->
+    <div class="border-b border-slate-800/80 pb-3.5 flex flex-wrap gap-x-6 gap-y-2 justify-center text-xs text-slate-400 font-medium">
+      <a href="#market-movers" class="hover:text-emerald-400 transition-all">MARKET OVERVIEW</a>
+      <a href="#greeks" class="hover:text-emerald-400 transition-all">GREEKS PRO</a>
+      <a href="#terminal" class="hover:text-emerald-400 transition-all">TERMINAL IN ACTION</a>
+      <a href="#heatmap" class="hover:text-emerald-400 transition-all">OI HEATMAP</a>
+      <a href="#blueprint" class="hover:text-emerald-400 transition-all">STRATEGY BLUEPRINTS</a>
+    </div>
 
-      <!-- ================= VIEW 1: DASHBOARD OVERVIEW ================= -->
-      <section id="view-dashboard" class="view-panel space-y-6">
+    <!-- FUTURES MARKET MOVERS & SENTIMENT METER -->
+    <section id="market-movers" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Futures Market Movers Card -->
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4">
+        <h3 class="text-xs font-bold text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+          <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i> Futures Market Movers
+        </h3>
+        <div class="space-y-3.5 pt-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-200">NIFTY 50 FUTURES</span>
+            <div class="text-right">
+              <span class="text-xs font-semibold text-emerald-400">22,453.80</span>
+              <span class="text-[10px] text-emerald-500 font-medium block">+0.58%</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-800/40 pt-3">
+            <span class="text-xs font-bold text-slate-200">BANKNIFTY FUTURES</span>
+            <div class="text-right">
+              <span class="text-xs font-semibold text-emerald-400">47,840.15</span>
+              <span class="text-[10px] text-emerald-500 font-medium block">+0.72%</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-800/40 pt-3">
+            <span class="text-xs font-bold text-slate-200">FINNIFTY FUTURES</span>
+            <div class="text-right">
+              <span class="text-xs font-semibold text-rose-400">21,120.45</span>
+              <span class="text-[10px] text-rose-500 font-medium block">-0.12%</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-800/40 pt-3">
+            <span class="text-xs font-bold text-slate-200">MIDCPNIFTY FUTURES</span>
+            <div class="text-right">
+              <span class="text-xs font-semibold text-emerald-400">10,412.50</span>
+              <span class="text-[10px] text-emerald-500 font-medium block">+0.22%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sentiment Meter Card -->
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+        <h3 class="text-xs font-bold text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+          <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i> F&O Market Sentiment Meter
+        </h3>
+        <div class="space-y-4 py-2">
+          <div class="flex justify-between text-[10px] text-slate-500 font-bold uppercase">
+            <span>Bearish</span>
+            <span class="text-emerald-400">Neutral</span>
+            <span>Bullish</span>
+          </div>
+          <!-- Gauge Slider -->
+          <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden relative">
+            <div class="bg-gradient-to-r from-rose-500 via-yellow-500 to-emerald-500 h-full w-full"></div>
+            <div class="absolute top-0 bottom-0 w-1.5 bg-white shadow-xl left-[65%] border border-black"></div>
+          </div>
+          <div class="text-center">
+            <span class="text-xs font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">Put-Call Ratio (PCR): 1.34</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-center pt-2">
+          <div>
+            <span class="text-[9px] text-slate-500 font-semibold block uppercase">Calls OI</span>
+            <span class="text-xs font-bold text-rose-400">12.4M</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-500 font-semibold block uppercase">Puts OI</span>
+            <span class="text-xs font-bold text-emerald-400">16.6M</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-500 font-semibold block uppercase">Max Pain</span>
+            <span class="text-xs font-bold text-slate-200">24,500</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-500 font-semibold block uppercase">VIX</span>
+            <span class="text-xs font-bold text-rose-400">12.34</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Activity Card -->
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4">
+        <h3 class="text-xs font-bold text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+          <i data-lucide="landmark" class="w-4 h-4 text-emerald-400"></i> FII Position flow
+        </h3>
+        <div class="space-y-3 pt-1">
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400">FII Net Long Ratio</span>
+            <span class="font-bold text-emerald-400">72.4%</span>
+          </div>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-emerald-500 h-full" style="width: 72%"></div>
+          </div>
+          
+          <div class="flex justify-between text-xs pt-2">
+            <span class="text-slate-400">Institutional Net Flow</span>
+            <span class="font-bold text-emerald-400">+2,340 CR</span>
+          </div>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-emerald-500 h-full" style="width: 65%"></div>
+          </div>
+
+          <div class="flex justify-between text-xs pt-2">
+            <span class="text-slate-400">Day Net position Change</span>
+            <span class="font-bold text-emerald-400">+1,120 CR</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TERMINAL IN ACTION (PROFESSIONAL TOOLS) -->
+    <section id="terminal" class="space-y-12">
+      <div class="text-center space-y-2">
+        <span class="text-xs text-emerald-400 font-extrabold uppercase tracking-wider">Terminal In Action</span>
+        <h2 class="text-2xl lg:text-3xl font-extrabold text-white">Professional-grade tools for serious traders</h2>
+      </div>
+
+      <!-- Feature 1: Research at your fingertips -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="space-y-4">
+          <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 w-fit">
+            <i data-lucide="file-search" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white">Research at your fingertips</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            F&O Analytics Pro provides interactive data matrices and exclusive outlooks with options expiration and strike prices from a dedicated team of market analysts. Get real-time open interest changes, strike-wise analysis, and institutional flow tracking in one unified dashboard.
+          </p>
+        </div>
         
-        <!-- Dashboard Top Headline -->
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span>Overview Analytics</span>
-              <span class="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium px-2 py-0.5 rounded-full">Live Monitor</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-1">Consolidated derivative metrics, trends, and market sentiments.</p>
+        <!-- Feature 1 Card: Open Interest Scanner Mockup -->
+        <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-4 space-y-3.5 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-emerald-400"></i> Open Interest Scanner
+            </span>
+            <span class="text-[9px] text-slate-500">11 JUN 2026</span>
+          </div>
+          <div class="space-y-2.5 text-xs">
+            <div class="flex justify-between font-semibold text-slate-500">
+              <span>CALL OI</span>
+              <span>LTP</span>
+              <span class="text-slate-300">STRIKE</span>
+              <span>LTP</span>
+              <span>PUT OI</span>
+            </div>
+            <div class="flex justify-between border-t border-slate-800/40 pt-2 text-slate-300">
+              <span class="text-rose-400 font-medium">12.4L</span>
+              <span>184.2</span>
+              <span class="text-slate-400 font-bold">22300</span>
+              <span>32.1</span>
+              <span class="text-emerald-400 font-medium">4.1L</span>
+            </div>
+            <div class="flex justify-between border-t border-slate-800/40 pt-2 text-slate-300 bg-emerald-500/5 p-1 rounded">
+              <span class="text-rose-400 font-medium">25.3L</span>
+              <span>105.8</span>
+              <span class="text-emerald-400 font-bold">22400</span>
+              <span>58.2</span>
+              <span class="text-emerald-400 font-medium">14.8L</span>
+            </div>
+            <div class="flex justify-between border-t border-slate-800/40 pt-2 text-slate-300">
+              <span class="text-rose-400 font-medium">4.2L</span>
+              <span>22.4</span>
+              <span class="text-slate-400 font-bold">22500</span>
+              <span>178.2</span>
+              <span class="text-emerald-400 font-medium">1.4L</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <!-- Put Call Ratio Card -->
-          <div class="bg-[#090d16] border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-4">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-400">PCR Volume Ratio</span>
-              <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">Mild Bullish</span>
-            </div>
-            <div class="flex items-baseline gap-2">
-              <span class="text-3xl font-extrabold tracking-tight text-white">1.15</span>
-              <span class="text-xs text-emerald-400 font-medium flex items-center gap-0.5">
-                <i data-lucide="trending-up" class="w-3 h-3"></i> +2.3%
-              </span>
-            </div>
-            <p class="text-[10px] text-slate-500 leading-relaxed">Put OI of 49.2L vs Call OI of 42.8L. Support building at lower bands.</p>
+      <!-- Feature 2: Make fast decisions -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center lg:flex-row-reverse">
+        <div class="lg:order-2 space-y-4">
+          <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 w-fit">
+            <i data-lucide="layout" class="w-5 h-5 text-emerald-400"></i>
           </div>
-
-          <!-- Max Pain Card -->
-          <div class="bg-[#090d16] border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-4">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-400">Max Pain Strike</span>
-              <span class="text-[10px] bg-slate-800 text-slate-300 border border-slate-700/80 px-2 py-0.5 rounded-full font-medium">Neutral</span>
-            </div>
-            <div class="flex items-baseline gap-2">
-              <span class="text-3xl font-extrabold tracking-tight text-white">22,400</span>
-              <span class="text-xs text-slate-400 font-medium">No Shift Today</span>
-            </div>
-            <p class="text-[10px] text-slate-500 leading-relaxed">Maximum option writer concentration is settled around the ATM 22,400 strike.</p>
+          <h3 class="text-xl font-bold text-white">Make fast decisions with a customized workspace</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Our advanced layout framework delivers dynamic multi-strike security monitors, powerful alerting engines, and sophisticated option chain visualization tools that move markets. Build, save, and share custom workspace configurations tailored to your trading style.
+          </p>
+        </div>
+        
+        <!-- Feature 2 Card: Chart Workspace Mockup -->
+        <div class="lg:order-1 bg-[#090d16] border border-slate-800 rounded-2xl p-4 space-y-3.5 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="candlestick-chart" class="w-3.5 h-3.5 text-emerald-400"></i> NIFTY 50 - 15m
+            </span>
+            <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 rounded">ONLINE</span>
           </div>
-
-          <!-- Net FII Flows Index Card -->
-          <div class="bg-[#090d16] border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-4">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-400">FII Net Derivative Flow</span>
-              <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">Buying Support</span>
-            </div>
-            <div class="flex items-baseline gap-2">
-              <span class="text-3xl font-extrabold tracking-tight text-white">+1,240 Cr</span>
-              <span class="text-xs text-emerald-400 font-medium">In Index Longs</span>
-            </div>
-            <p class="text-[10px] text-slate-500 leading-relaxed">FII active contracts long-short ratio stands adjusted to 58.4% today.</p>
+          <div class="h-44">
+            <canvas id="featureChart"></canvas>
           </div>
         </div>
+      </div>
 
-        <!-- Overview Main Panels Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <!-- Live Multi Strike Trend chart -->
-          <div class="lg:col-span-2 bg-[#090d16] border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-800/60 pb-3">
-              <div>
-                <h3 class="text-sm font-bold text-slate-200">Open Interest Shift Index</h3>
-                <p class="text-[11px] text-slate-500">Live strike comparison distribution</p>
+      <!-- Feature 3: Never miss a beat (Mobile App) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="space-y-4">
+          <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 w-fit">
+            <i data-lucide="smartphone" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white">Never miss a beat</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Access your derivative positions and F&O volatility parameters right on your mobile device. Get instant push notifications for strike breakouts, unusual volume spikes, and critical block trades instantly.
+          </p>
+        </div>
+        
+        <!-- Feature 3: Mobile Phone Container -->
+        <div class="flex justify-center">
+          <div class="w-56 h-96 bg-black rounded-[36px] p-3 border-4 border-slate-800 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+            <!-- Notch -->
+            <div class="absolute top-1 left-1/2 transform -translate-x-1/2 w-20 h-4 bg-slate-800 rounded-full z-10"></div>
+            
+            <div class="flex-1 flex flex-col justify-between pt-4 space-y-4">
+              <div class="flex items-center justify-between text-[10px] text-slate-400">
+                <span class="font-bold">F&O Pro</span>
+                <i data-lucide="battery-charging" class="w-3.5 h-3.5 text-emerald-400"></i>
               </div>
-              <div class="flex items-center gap-1 bg-[#030712] p-1 border border-slate-800 rounded-lg">
-                <button class="px-2.5 py-1 text-[10px] font-semibold bg-[#090d16] rounded border border-slate-800 text-slate-200">Volume</button>
-                <button class="px-2.5 py-1 text-[10px] font-semibold text-slate-500 hover:text-slate-300">OI Change</button>
+              <div class="bg-[#090d16] border border-slate-850 p-2.5 rounded-xl text-center space-y-1">
+                <span class="text-[8px] text-slate-500 font-medium block uppercase">Total Portfolio value</span>
+                <span class="text-sm font-extrabold text-white">₹4,28,450</span>
+                <span class="text-[8px] text-emerald-400 font-bold block">+3.14%</span>
+              </div>
+              <div class="flex-1 bg-[#090d16] border border-slate-850 p-2.5 rounded-xl">
+                <span class="text-[8px] text-slate-500 font-medium block uppercase mb-1.5">Sector Trends</span>
+                <div class="space-y-1 text-[9px]">
+                  <div class="flex justify-between text-slate-300">
+                    <span>Banking</span>
+                    <span class="text-emerald-400 font-bold">+3.4%</span>
+                  </div>
+                  <div class="flex justify-between text-slate-300 pt-1 border-t border-slate-850">
+                    <span>IT Sector</span>
+                    <span class="text-rose-400 font-bold">-1.5%</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="h-64">
-              <canvas id="overviewOiChart"></canvas>
-            </div>
+            <!-- Indicator line -->
+            <div class="w-20 h-1 bg-slate-700 mx-auto rounded-full mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE OPEN INTEREST SECTOR HEATMAP -->
+    <section id="heatmap" class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Live Open Interest (OI) Sector Heatmap</h2>
+        <p class="text-xs text-slate-400">Real-time derivatives positioning across major indices and stocks</p>
+      </div>
+
+      <!-- Sector Boxes Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <!-- BANKING -->
+        <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/15 transition-all">
+          <span class="text-[10px] text-slate-400 uppercase font-bold">BANKING</span>
+          <span class="text-sm font-extrabold text-emerald-400">+3.4%</span>
+        </div>
+        <!-- AUTO -->
+        <div class="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/10 transition-all">
+          <span class="text-[10px] text-slate-400 uppercase font-bold">AUTO</span>
+          <span class="text-sm font-extrabold text-emerald-400">+1.8%</span>
+        </div>
+        <!-- INFRA -->
+        <div class="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-rose-500/15 transition-all">
+          <span class="text-[10px] text-slate-400 uppercase font-bold">INFRA</span>
+          <span class="text-sm font-extrabold text-rose-400">-1.5%</span>
+        </div>
+        <!-- IT -->
+        <div class="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-rose-500/15 transition-all">
+          <span class="text-[10px] text-slate-400 uppercase font-bold">IT SECTOR</span>
+          <span class="text-sm font-extrabold text-rose-400">-1.5%</span>
+        </div>
+        <!-- RELIANCE -->
+        <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/15 transition-all">
+          <span class="text-[10px] text-slate-400 uppercase font-bold">RELIANCE</span>
+          <span class="text-sm font-extrabold text-emerald-400">+2.1%</span>
+        </div>
+        <!-- TELECOM -->
+        <div class="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/10 transition-all">
+          <span class="text-[10px] text-slate-400 uppercase font-bold">TELECOM</span>
+          <span class="text-sm font-extrabold text-emerald-400">+0.8%</span>
+        </div>
+        <!-- METALS -->
+        <div class="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/10 transition-all">
+          <span class="text-[10px] text-slate-400 uppercase font-bold">METALS</span>
+          <span class="text-sm font-extrabold text-emerald-400">+0.6%</span>
+        </div>
+      </div>
+
+      <!-- Sector Summary Metrics Bar -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-[#090d16] border border-slate-800 rounded-xl text-center">
+        <div>
+          <span class="text-[10px] text-slate-500 uppercase font-semibold">Total OI Change</span>
+          <p class="text-sm font-bold text-emerald-400 mt-0.5">+2.4%</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-500 uppercase font-semibold">Bullish Sectors</span>
+          <p class="text-sm font-bold text-emerald-400 mt-0.5">9 Sectors</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-500 uppercase font-semibold">Bearish Sectors</span>
+          <p class="text-sm font-bold text-rose-400 mt-0.5">7 Sectors</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-500 uppercase font-semibold">Market Bias</span>
+          <p class="text-sm font-bold text-emerald-400 mt-0.5">Bullish State</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- OPTIONS STRATEGY BLUEPRINT OPTIMIZER -->
+    <section id="blueprint" class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Options Strategy Blueprint Optimizer</h2>
+        <p class="text-xs text-slate-400">Select your market outlook to discover optimal derivatives strategies.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Selection Tabs & Recommended Strategies Panel -->
+        <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="switchStrategy('bullish')" id="strat-tab-bullish" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">Bullish</button>
+            <button onclick="switchStrategy('bearish')" id="strat-tab-bearish" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white">Bearish</button>
+            <button onclick="switchStrategy('volatile')" id="strat-tab-volatile" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white">High Volatility</button>
+            <button onclick="switchStrategy('sideways')" id="strat-tab-sideways" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white">Sideways</button>
           </div>
 
-          <!-- Dynamic F&O Heatmap category -->
-          <div class="bg-[#090d16] border border-slate-800 p-5 rounded-2xl flex flex-col space-y-4">
-            <div class="border-b border-slate-800/60 pb-3">
-              <h3 class="text-sm font-bold text-slate-200">Derivative Sector Heatmap</h3>
-              <p class="text-[11px] text-slate-500">Stock build up classifications</p>
+          <div id="strategy-details" class="space-y-4 flex-1 pt-3">
+            <div class="bg-[#030712] p-3 rounded-xl border border-slate-800">
+              <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 rounded font-bold uppercase">RECOMMENDED</span>
+              <h4 class="text-sm font-bold text-white mt-1">Bull Call Spread</h4>
+              <p class="text-[10px] text-slate-500 mt-0.5">Buy ATM Call, Sell OTM Call contract.</p>
             </div>
             
-            <div class="space-y-2.5 flex-1 overflow-y-auto pr-1">
-              <!-- Item -->
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-1.5 h-6 bg-emerald-500 rounded-full"></span>
-                  <div>
-                    <h4 class="text-xs font-bold text-slate-200">INFY</h4>
-                    <p class="text-[9px] text-slate-500 font-medium">Long Build Up</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-bold text-emerald-400">+3.14%</span>
-                  <p class="text-[9px] text-slate-500">OI Chg +12.4%</p>
-                </div>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span class="text-slate-500 block">Max Profit</span>
+                <span id="strat-profit" class="font-bold text-emerald-400">₹5,400</span>
               </div>
-
-              <!-- Item -->
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-rose-500/5 border border-rose-500/10">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-1.5 h-6 bg-rose-500 rounded-full"></span>
-                  <div>
-                    <h4 class="text-xs font-bold text-slate-200">TCS</h4>
-                    <p class="text-[9px] text-slate-500 font-medium">Short Build Up</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-bold text-rose-400">-1.92%</span>
-                  <p class="text-[9px] text-slate-500">OI Chg +8.7%</p>
-                </div>
+              <div>
+                <span class="text-slate-500 block">Max Loss</span>
+                <span id="strat-loss" class="font-bold text-rose-400">₹3,200</span>
               </div>
-
-              <!-- Item -->
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-1.5 h-6 bg-blue-500 rounded-full"></span>
-                  <div>
-                    <h4 class="text-xs font-bold text-slate-200">RELIANCE</h4>
-                    <p class="text-[9px] text-slate-500 font-medium">Short Covering</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-bold text-blue-400">+1.10%</span>
-                  <p class="text-[9px] text-slate-500">OI Chg -4.5%</p>
-                </div>
+              <div>
+                <span class="text-slate-500 block">Breakeven</span>
+                <span id="strat-breakeven" class="font-bold text-slate-300">22,350</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block">Win Probability</span>
+                <span id="strat-win" class="font-bold text-emerald-400">62%</span>
               </div>
             </div>
           </div>
         </div>
-      </section>
 
-
-      <!-- ================= VIEW 2: OPTION CHAIN ================= -->
-      <section id="view-option-chain" class="view-panel space-y-6 hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <span>Interactive Option Chain</span>
-              <span class="text-[10px] uppercase font-bold text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-md">ITM Highlighted</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-1">Complete Call and Put open interest analysis with color-coded In-The-Money bands.</p>
+        <!-- Payoff Diagram Chart Visual -->
+        <div class="lg:col-span-2 bg-[#090d16] border border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-3">
+            <h3 class="text-sm font-bold text-slate-200">Payoff Diagram Curve</h3>
+            <span class="text-[10px] text-slate-500">Estimations based on Nifty 12 Jun weekly options</span>
           </div>
-          
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-500 font-medium">Strike Range:</span>
-            <select class="bg-[#090d16] border border-slate-800 text-xs text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none">
-              <option value="10">ATM ± 5</option>
-              <option value="20" selected>ATM ± 10</option>
-              <option value="30">All Strikes</option>
-            </select>
+          <!-- Canvas Payoff Diagram Chart -->
+          <div class="h-60">
+            <canvas id="payoffChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTITUTIONAL DERIVATIVES ORDER FLOW LEDGER -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Institutional Derivatives Order Flow Ledger</h2>
+        <p class="text-xs text-slate-400">Real-time FII & DII net contract positions across F&O segments</p>
+      </div>
+
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950/40 text-slate-400 border-b border-slate-800 select-none">
+                <th class="p-4 font-bold">CATEGORY</th>
+                <th class="p-4 font-bold">ASSET CLASS</th>
+                <th class="p-4 font-bold text-center">NET POSITION</th>
+                <th class="p-4 font-bold text-center">DAY CHANGE</th>
+                <th class="p-4 font-bold text-right">VALUE (CR)</th>
+                <th class="p-4 font-bold text-center">SENTIMENT</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50 text-slate-300">
+              <tr class="hover:bg-slate-800/10">
+                <td class="p-4 font-extrabold text-slate-100">FII</td>
+                <td class="p-4">Index Futures</td>
+                <td class="p-4 text-center text-emerald-400 font-bold">+42,180</td>
+                <td class="p-4 text-center text-emerald-400 font-medium">+8,420</td>
+                <td class="p-4 text-right">12,840 CR</td>
+                <td class="p-4 text-center">
+                  <span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Strong Bullish</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-800/10">
+                <td class="p-4 font-extrabold text-slate-100">FII</td>
+                <td class="p-4">Index Options</td>
+                <td class="p-4 text-center text-rose-400 font-bold">-18,450</td>
+                <td class="p-4 text-center text-rose-400 font-medium">-2,180</td>
+                <td class="p-4 text-right">8,240 CR</td>
+                <td class="p-4 text-center">
+                  <span class="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Mild Bearish</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-800/10">
+                <td class="p-4 font-extrabold text-slate-100">FII</td>
+                <td class="p-4">Stock Futures</td>
+                <td class="p-4 text-center text-emerald-400 font-bold">+20,920</td>
+                <td class="p-4 text-center text-emerald-400 font-medium">+4,520</td>
+                <td class="p-4 text-right">16,340 CR</td>
+                <td class="p-4 text-center">
+                  <span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Bullish</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-800/10">
+                <td class="p-4 font-extrabold text-slate-100">DII</td>
+                <td class="p-4">Index Futures</td>
+                <td class="p-4 text-center text-emerald-400 font-bold">+5,120</td>
+                <td class="p-4 text-center text-emerald-400 font-medium">+820</td>
+                <td class="p-4 text-right">2,840 CR</td>
+                <td class="p-4 text-center">
+                  <span class="bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Neutral</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-800/10">
+                <td class="p-4 font-extrabold text-slate-100">DII</td>
+                <td class="p-4">Index Options</td>
+                <td class="p-4 text-center text-emerald-400 font-bold">+12,840</td>
+                <td class="p-4 text-center text-emerald-400 font-medium">+1,920</td>
+                <td class="p-4 text-right">5,640 CR</td>
+                <td class="p-4 text-center">
+                  <span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Bullish</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- IMPLIED VOLATILITY (IV) SKEW MATRIX -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Implied Volatility (IV) Skew Matrix</h2>
+        <p class="text-xs text-slate-400">Volatility smile analysis across strike prices for NIFTY options</p>
+      </div>
+
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4">
+        <div class="h-64">
+          <canvas id="skewChart"></canvas>
+        </div>
+        
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center pt-2">
+          <div class="bg-[#030712] border border-slate-850 p-3 rounded-xl">
+            <span class="text-[9px] text-slate-500 font-bold block uppercase mb-1">ATM IV</span>
+            <span class="text-sm font-extrabold text-white">12.4%</span>
+          </div>
+          <div class="bg-[#030712] border border-slate-850 p-3 rounded-xl">
+            <span class="text-[9px] text-slate-500 font-bold block uppercase mb-1">IV Skew</span>
+            <span class="text-sm font-extrabold text-white">+4.8%</span>
+          </div>
+          <div class="bg-[#030712] border border-slate-850 p-3 rounded-xl">
+            <span class="text-[9px] text-slate-500 font-bold block uppercase mb-1">Put Skew</span>
+            <span class="text-sm font-extrabold text-white">11.2%</span>
+          </div>
+          <div class="bg-[#030712] border border-slate-850 p-3 rounded-xl">
+            <span class="text-[9px] text-slate-500 font-bold block uppercase mb-1">Call Skew</span>
+            <span class="text-sm font-extrabold text-white">13.4%</span>
           </div>
         </div>
 
-        <!-- Custom high density option chain layout -->
-        <div class="bg-[#090d16] border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl">
-          <!-- Header Labels -->
-          <div class="grid grid-cols-2 text-center text-xs font-extrabold text-slate-400 border-b border-slate-800 divide-x divide-slate-800">
-            <div class="py-2.5 uppercase tracking-wider text-rose-400 bg-rose-500/5">Call Options (Resistance)</div>
-            <div class="py-2.5 uppercase tracking-wider text-emerald-400 bg-emerald-500/5">Put Options (Support)</div>
-          </div>
+        <div class="flex gap-3 bg-blue-500/5 border border-blue-500/10 p-3 rounded-xl">
+          <i data-lucide="info" class="w-5 h-5 text-blue-400 flex-shrink-0"></i>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            <strong class="text-blue-300">Volatility Smile Interpretation:</strong> The current smile shape indicates elevated demand for OTM puts, suggesting institutional hedging activity. Put skew is higher than call skew, which is typical in risk-off market environments.
+          </p>
+        </div>
+      </div>
+    </section>
 
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-950/40 text-slate-500 border-b border-slate-800 select-none">
-                  <!-- Call columns -->
-                  <th class="p-3 font-semibold text-center w-24">OI (Lakhs)</th>
-                  <th class="p-3 font-semibold text-center w-20">Chg OI %</th>
-                  <th class="p-3 font-semibold text-center w-20">Volume</th>
-                  <th class="p-3 font-semibold text-center w-14">IV</th>
-                  <th class="p-3 font-semibold text-right w-20">LTP</th>
-                  
-                  <!-- Strike price column -->
-                  <th class="p-3 font-bold text-center text-slate-300 bg-slate-950/80 border-x border-slate-800 w-24 sticky left-0 z-10">STRIKE PRICE</th>
-                  
-                  <!-- Put columns -->
-                  <th class="p-3 font-semibold text-left w-20">LTP</th>
-                  <th class="p-3 font-semibold text-center w-14">IV</th>
-                  <th class="p-3 font-semibold text-center w-20">Volume</th>
-                  <th class="p-3 font-semibold text-center w-20">Chg OI %</th>
-                  <th class="p-3 font-semibold text-center w-24">OI (Lakhs)</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/50 text-slate-300">
+    <!-- LIGHTNING FAST EXECUTION OPTION MATRIX -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Lightning-Fast Execution Option Matrix</h2>
+        <p class="text-xs text-slate-400">Professional-grade option chain with real-time Greeks, OI analysis, and one-click execution.</p>
+      </div>
+
+      <!-- Option Chain Panel -->
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-4 border-b border-slate-800/60 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-2 bg-[#030712] p-1 border border-slate-800 rounded-lg">
+            <button class="px-2.5 py-1 text-xs font-semibold bg-[#090d16] rounded text-slate-200">05 Jun</button>
+            <button class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-300">12 Jun</button>
+            <button class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-300">19 Jun</button>
+            <button class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-300">26 Jun</button>
+          </div>
+          <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded font-mono font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping"></span> LIVE MATRIX FEED
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950/40 text-slate-500 border-b border-slate-800 select-none">
+                <th class="p-3 font-semibold text-center w-24">CALL OI</th>
+                <th class="p-3 font-semibold text-center w-16">CHG OI</th>
+                <th class="p-3 font-semibold text-center w-16">VOL</th>
+                <th class="p-3 font-semibold text-right w-20">LTP</th>
                 
-                <!-- Row 1 (Call ITM - Put OTM) -->
-                <tr class="hover:bg-slate-800/10">
-                  <td class="p-3 bg-itm border-b border-itmBorder">
-                    <div class="text-center font-medium">1.54</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-rose-500 h-full" style="width: 15%"></div></div>
-                  </td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-rose-400 font-medium">-1.2%</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-slate-500">14.8K</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-slate-400">13.2</td>
-                  <td class="p-3 text-right bg-itm border-b border-itmBorder font-medium text-slate-200">254.10</td>
-                  
-                  <td class="p-3 text-center font-extrabold text-slate-200 bg-[#060a12]/90 border-x border-slate-800 sticky left-0 z-10 shadow-inner">22,200</td>
-                  
-                  <td class="p-3 text-left font-medium">8.40</td>
-                  <td class="p-3 text-center text-slate-400">14.1</td>
-                  <td class="p-3 text-center text-slate-500">41.3K</td>
-                  <td class="p-3 text-center text-emerald-400 font-medium">+245%</td>
-                  <td class="p-3">
-                    <div class="text-center font-medium">35.20</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-emerald-500 h-full" style="width: 80%"></div></div>
-                  </td>
-                </tr>
+                <th class="p-3 font-bold text-center text-slate-300 bg-slate-950/80 border-x border-slate-800 w-24 sticky left-0 z-10">STRIKE</th>
+                
+                <th class="p-3 font-semibold text-left w-20">LTP</th>
+                <th class="p-3 font-semibold text-center w-16">VOL</th>
+                <th class="p-3 font-semibold text-center w-16">CHG OI</th>
+                <th class="p-3 font-semibold text-center w-24">PUT OI</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50 text-slate-300">
+              
+              <!-- Yellow shaded background for calls ITM (< Strike) -->
+              <tr class="hover:bg-slate-800/10 bg-yellow-500/[0.02]">
+                <td class="p-3 text-center text-rose-400 font-semibold">1.24L</td>
+                <td class="p-3 text-center text-rose-400 font-medium">-1.2%</td>
+                <td class="p-3 text-center text-slate-500">14.8K</td>
+                <td class="p-3 text-right font-medium text-slate-200">254.10</td>
+                
+                <td class="p-3 text-center font-extrabold text-slate-200 bg-[#060a12]/90 border-x border-slate-800 sticky left-0 z-10">22,200</td>
+                
+                <td class="p-3 text-left font-medium">8.40</td>
+                <td class="p-3 text-center text-slate-500">41.3K</td>
+                <td class="p-3 text-center text-emerald-400 font-medium">+245%</td>
+                <td class="p-3 text-center text-emerald-400 font-semibold">35.20L</td>
+              </tr>
 
-                <!-- Row 2 (Call ITM - Put OTM) -->
-                <tr class="hover:bg-slate-800/10">
-                  <td class="p-3 bg-itm border-b border-itmBorder">
-                    <div class="text-center font-medium">4.20</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-rose-500 h-full" style="width: 30%"></div></div>
-                  </td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-rose-400 font-medium">-5.4%</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-slate-500">22.1K</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-slate-400">12.8</td>
-                  <td class="p-3 text-right bg-itm border-b border-itmBorder font-medium text-slate-200">178.60</td>
-                  
-                  <td class="p-3 text-center font-extrabold text-slate-200 bg-[#060a12]/90 border-x border-slate-800 sticky left-0 z-10 shadow-inner">22,300</td>
-                  
-                  <td class="p-3 text-left font-medium">18.50</td>
-                  <td class="p-3 text-center text-slate-400">13.5</td>
-                  <td class="p-3 text-center text-slate-500">54.8K</td>
-                  <td class="p-3 text-center text-emerald-400 font-medium">+180%</td>
-                  <td class="p-3">
-                    <div class="text-center font-medium">41.20</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-emerald-500 h-full" style="width: 90%"></div></div>
-                  </td>
-                </tr>
+              <tr class="hover:bg-slate-800/10 bg-yellow-500/[0.02]">
+                <td class="p-3 text-center text-rose-400 font-semibold">4.18L</td>
+                <td class="p-3 text-center text-rose-400 font-medium">-5.4%</td>
+                <td class="p-3 text-center text-slate-500">22.1K</td>
+                <td class="p-3 text-right font-medium text-slate-200">178.60</td>
+                
+                <td class="p-3 text-center font-extrabold text-slate-200 bg-[#060a12]/90 border-x border-slate-800 sticky left-0 z-10">22,300</td>
+                
+                <td class="p-3 text-left font-medium">18.50</td>
+                <td class="p-3 text-center text-slate-500">54.8K</td>
+                <td class="p-3 text-center text-emerald-400 font-medium">+180%</td>
+                <td class="p-3 text-center text-emerald-400 font-semibold">41.20L</td>
+              </tr>
 
-                <!-- Row 3 (ATM Strike) -->
-                <tr class="bg-slate-900/60 border-y-2 border-emerald-500/40 hover:bg-slate-800/20">
-                  <td class="p-3">
-                    <div class="text-center font-medium">25.30</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-rose-500 h-full" style="width: 65%"></div></div>
-                  </td>
-                  <td class="p-3 text-center text-emerald-400 font-medium">+120%</td>
-                  <td class="p-3 text-center text-slate-400">185.3K</td>
-                  <td class="p-3 text-center text-slate-400">12.5</td>
-                  <td class="p-3 text-right font-medium text-slate-200">105.80</td>
-                  
-                  <td class="p-3 text-center font-extrabold text-emerald-400 bg-emerald-500/10 border-x border-emerald-500/20 sticky left-0 z-10 shadow-md">
-                    22,400
-                    <span class="text-[9px] block text-emerald-500 font-bold uppercase tracking-wider mt-0.5">ATM</span>
-                  </td>
-                  
-                  <td class="p-3 text-left font-medium">58.20</td>
-                  <td class="p-3 text-center text-slate-400">12.2</td>
-                  <td class="p-3 text-center text-slate-400">194.2K</td>
-                  <td class="p-3 text-center text-emerald-400 font-medium">+42%</td>
-                  <td class="p-3">
-                    <div class="text-center font-medium">33.10</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-emerald-500 h-full" style="width: 75%"></div></div>
-                  </td>
-                </tr>
+              <!-- ATM highlighted -->
+              <tr class="bg-slate-900/40 border-y border-emerald-500/20 hover:bg-slate-800/20">
+                <td class="p-3 text-center text-rose-400 font-semibold">25.30L</td>
+                <td class="p-3 text-center text-emerald-400 font-medium">+120%</td>
+                <td class="p-3 text-center text-slate-400">185.3K</td>
+                <td class="p-3 text-right font-medium text-slate-200">105.80</td>
+                
+                <td class="p-3 text-center font-extrabold text-emerald-400 bg-emerald-500/10 border-x border-emerald-500/20 sticky left-0 z-10">22,400</td>
+                
+                <td class="p-3 text-left font-medium">58.20</td>
+                <td class="p-3 text-center text-slate-400">194.2K</td>
+                <td class="p-3 text-center text-emerald-400 font-medium">+42%</td>
+                <td class="p-3 text-center text-emerald-400 font-semibold">33.10L</td>
+              </tr>
 
-                <!-- Row 4 (Call OTM - Put ITM) -->
-                <tr class="hover:bg-slate-800/10">
-                  <td class="p-3">
-                    <div class="text-center font-medium">31.40</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-rose-500 h-full" style="width: 72%"></div></div>
-                  </td>
-                  <td class="p-3 text-center text-emerald-400 font-medium">+310%</td>
-                  <td class="p-3 text-center text-slate-500">220.4K</td>
-                  <td class="p-3 text-center text-slate-400">11.9</td>
-                  <td class="p-3 text-right font-medium text-slate-200">51.30</td>
-                  
-                  <td class="p-3 text-center font-extrabold text-slate-200 bg-[#060a12]/90 border-x border-slate-800 sticky left-0 z-10 shadow-inner">22,500</td>
-                  
-                  <td class="p-3 text-left bg-itm border-b border-itmBorder font-medium text-slate-200">108.90</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-slate-400">12.9</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-slate-500">18.4K</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-rose-400 font-medium">-18.4%</td>
-                  <td class="p-3 bg-itm border-b border-itmBorder">
-                    <div class="text-center font-medium">9.80</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-emerald-500 h-full" style="width: 20%"></div></div>
-                  </td>
-                </tr>
+              <!-- Yellow shaded background for puts ITM (>= Strike) -->
+              <tr class="hover:bg-slate-800/10 bg-yellow-500/[0.02]">
+                <td class="p-3 text-center text-rose-400 font-semibold">31.40L</td>
+                <td class="p-3 text-center text-emerald-400 font-medium">+310%</td>
+                <td class="p-3 text-center text-slate-500">220.4K</td>
+                <td class="p-3 text-right font-medium text-slate-200">51.30</td>
+                
+                <td class="p-3 text-center font-extrabold text-slate-200 bg-[#060a12]/90 border-x border-slate-800 sticky left-0 z-10">22,500</td>
+                
+                <td class="p-3 text-left font-medium bg-yellow-500/[0.01]">108.90</td>
+                <td class="p-3 text-center text-slate-500 bg-yellow-500/[0.01]">18.4K</td>
+                <td class="p-3 text-center text-rose-400 font-medium bg-yellow-500/[0.01]">-18%</td>
+                <td class="p-3 text-center text-emerald-400 font-semibold bg-yellow-500/[0.01]">9.80L</td>
+              </tr>
 
-                <!-- Row 5 (Call OTM - Put ITM) -->
-                <tr class="hover:bg-slate-800/10">
-                  <td class="p-3">
-                    <div class="text-center font-medium">42.80</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-rose-500 h-full" style="width: 95%"></div></div>
-                  </td>
-                  <td class="p-3 text-center text-emerald-400 font-medium">+410%</td>
-                  <td class="p-3 text-center text-slate-500">314.1K</td>
-                  <td class="p-3 text-center text-slate-400">11.4</td>
-                  <td class="p-3 text-right font-medium text-slate-200">22.40</td>
-                  
-                  <td class="p-3 text-center font-extrabold text-slate-200 bg-[#060a12]/90 border-x border-slate-800 sticky left-0 z-10 shadow-inner">22,600</td>
-                  
-                  <td class="p-3 text-left bg-itm border-b border-itmBorder font-medium text-slate-200">178.20</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-slate-400">13.3</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-slate-500">4.1K</td>
-                  <td class="p-3 text-center bg-itm border-b border-itmBorder text-rose-400 font-medium">-32.1%</td>
-                  <td class="p-3 bg-itm border-b border-itmBorder">
-                    <div class="text-center font-medium">1.40</div>
-                    <div class="w-full bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-emerald-500 h-full" style="width: 5%"></div></div>
-                  </td>
-                </tr>
+              <tr class="hover:bg-slate-800/10 bg-yellow-500/[0.02]">
+                <td class="p-3 text-center text-rose-400 font-semibold">42.80L</td>
+                <td class="p-3 text-center text-emerald-400 font-medium">+410%</td>
+                <td class="p-3 text-center text-slate-500">314.1K</td>
+                <td class="p-3 text-right font-medium text-slate-200">22.40</td>
+                
+                <td class="p-3 text-center font-extrabold text-slate-200 bg-[#060a12]/90 border-x border-slate-800 sticky left-0 z-10">22,600</td>
+                
+                <td class="p-3 text-left font-medium bg-yellow-500/[0.01]">178.20</td>
+                <td class="p-3 text-center text-slate-500 bg-yellow-500/[0.01]">4.1K</td>
+                <td class="p-3 text-center text-rose-400 font-medium bg-yellow-500/[0.01]">-32%</td>
+                <td class="p-3 text-center text-emerald-400 font-semibold bg-yellow-500/[0.01]">1.40L</td>
+              </tr>
 
-              </tbody>
-            </table>
-          </div>
+            </tbody>
+          </table>
         </div>
-      </section>
+      </div>
+    </section>
 
+    <!-- REAL-TIME AI SIGNAL INTELLIGENCE -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Real-Time AI Signal Intelligence</h2>
+        <p class="text-xs text-slate-400">Automated pattern recognition and institutional flow detection powered by machine learning algorithms scanning 500+ data points every second.</p>
+      </div>
 
-      <!-- ================= VIEW 3: OI MULTI-STRIKE ================= -->
-      <section id="view-oi-multi" class="view-panel space-y-6 hidden">
-        <div>
-          <h2 class="text-xl font-bold tracking-tight text-white">Multi-Strike Open Interest</h2>
-          <p class="text-xs text-slate-400 mt-1">Track call vs put writing trends over custom interval periods.</p>
-        </div>
-
-        <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="text-xs font-semibold text-slate-400">Strikes Selector:</span>
-              <label class="flex items-center gap-1.5 bg-[#030712] px-3 py-1 rounded-xl border border-slate-800 text-xs text-slate-300">
-                <input type="checkbox" checked class="accent-emerald-500"> 22,300
-              </label>
-              <label class="flex items-center gap-1.5 bg-[#030712] px-3 py-1 rounded-xl border border-slate-800 text-xs text-slate-300">
-                <input type="checkbox" checked class="accent-emerald-500"> 22,400
-              </label>
-              <label class="flex items-center gap-1.5 bg-[#030712] px-3 py-1 rounded-xl border border-slate-800 text-xs text-slate-300">
-                <input type="checkbox" checked class="accent-emerald-500"> 22,500
-              </label>
-            </div>
-            
-            <div class="flex items-center gap-2">
-              <button class="px-2.5 py-1 text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-md">Intraday</button>
-              <button class="px-2.5 py-1 text-xs text-slate-400">Cumulative</button>
-            </div>
-          </div>
-
-          <div class="h-96">
-            <canvas id="multiStrikeLargeChart"></canvas>
-          </div>
-        </div>
-      </section>
-
-
-      <!-- ================= VIEW 4: F&O SCREENER ================= -->
-      <section id="view-screener" class="view-panel space-y-6 hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-xl font-bold tracking-tight text-white">Futures & Options Screener</h2>
-            <p class="text-xs text-slate-400 mt-1">Real-time technical filters detecting build-ups, covers, and volume breakouts.</p>
-          </div>
-          
-          <div class="flex items-center gap-1.5 bg-[#090d16] p-1 border border-slate-800 rounded-xl">
-            <button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400">All Stocks</button>
-            <button class="px-3 py-1.5 text-xs font-semibold text-slate-400">Nifty 50</button>
-            <button class="px-3 py-1.5 text-xs font-semibold text-slate-400">F&O Only</button>
-          </div>
-        </div>
-
-        <div class="bg-[#090d16] border border-slate-800 rounded-2xl overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-950/50 text-slate-400 border-b border-slate-800">
-                  <th class="p-3.5 font-bold">SYMBOL</th>
-                  <th class="p-3.5 font-bold">LTP</th>
-                  <th class="p-3.5 font-bold">PRICE CHG %</th>
-                  <th class="p-3.5 font-bold">OI (Contracts)</th>
-                  <th class="p-3.5 font-bold">OI CHANGE %</th>
-                  <th class="p-3.5 font-bold">BUILD UP STATE</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/40 text-slate-300">
-                <tr class="hover:bg-slate-800/20">
-                  <td class="p-3.5 font-extrabold text-slate-100">INFY</td>
-                  <td class="p-3.5">1,452.40</td>
-                  <td class="p-3.5 text-emerald-400 font-semibold">+3.14%</td>
-                  <td class="p-3.5">42,50,000</td>
-                  <td class="p-3.5 text-emerald-400 font-medium">+12.4%</td>
-                  <td class="p-3.5">
-                    <span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px] tracking-wider">Long Build Up</span>
-                  </td>
-                </tr>
-                <tr class="hover:bg-slate-800/20">
-                  <td class="p-3.5 font-extrabold text-slate-100">TCS</td>
-                  <td class="p-3.5">3,890.10</td>
-                  <td class="p-3.5 text-rose-400 font-semibold">-1.92%</td>
-                  <td class="p-3.5">18,40,000</td>
-                  <td class="p-3.5 text-emerald-400 font-medium">+8.7%</td>
-                  <td class="p-3.5">
-                    <span class="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px] tracking-wider">Short Build Up</span>
-                  </td>
-                </tr>
-                <tr class="hover:bg-slate-800/20">
-                  <td class="p-3.5 font-extrabold text-slate-100">RELIANCE</td>
-                  <td class="p-3.5">2,910.15</td>
-                  <td class="p-3.5 text-emerald-400 font-semibold">+1.10%</td>
-                  <td class="p-3.5">1,12,00,000</td>
-                  <td class="p-3.5 text-rose-400 font-medium">-4.5%</td>
-                  <td class="p-3.5">
-                    <span class="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px] tracking-wider">Short Covering</span>
-                  </td>
-                </tr>
-                <tr class="hover:bg-slate-800/20">
-                  <td class="p-3.5 font-extrabold text-slate-100">HDFCBANK</td>
-                  <td class="p-3.5">1,510.40</td>
-                  <td class="p-3.5 text-rose-400 font-semibold">-0.85%</td>
-                  <td class="p-3.5">3,14,00,000</td>
-                  <td class="p-3.5 text-rose-400 font-medium">-2.10%</td>
-                  <td class="p-3.5">
-                    <span class="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px] tracking-wider">Long Unwinding</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-
-      <!-- ================= VIEW 5: FII / DII FLOWS ================= -->
-      <section id="view-fii-dii" class="view-panel space-y-6 hidden">
-        <div>
-          <h2 class="text-xl font-bold tracking-tight text-white">FII & DII Derivative Positioning</h2>
-          <p class="text-xs text-slate-400 mt-1">Monitor net open-market institutional flow metrics and historical support.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-[#090d16] border border-slate-800 p-5 rounded-2xl space-y-3">
-            <h3 class="text-sm font-bold text-slate-200">FII Long-Short Index Ratio</h3>
-            <div class="h-60 relative">
-              <canvas id="fiiPieChart"></canvas>
-            </div>
-          </div>
-
-          <div class="bg-[#090d16] border border-slate-800 p-5 rounded-2xl space-y-4">
-            <h3 class="text-sm font-bold text-slate-200">Net Cash Position Flow (Cr)</h3>
-            <div class="space-y-4">
-              <div>
-                <div class="flex justify-between text-xs font-semibold mb-1">
-                  <span class="text-slate-400">FII Futures Net Flow</span>
-                  <span class="text-emerald-400">+1,240 Cr</span>
-                </div>
-                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div class="bg-emerald-500 h-full" style="width: 70%"></div>
-                </div>
+      <!-- Signals Feed List -->
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl overflow-hidden shadow-2xl divide-y divide-slate-800/60">
+        
+        <!-- Signal Item -->
+        <div class="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-slate-800/20 transition-all">
+          <div class="flex items-start gap-3">
+            <span class="text-xs font-mono text-slate-500 pt-0.5">14:32:18</span>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-200">NIFTY 22500 CE volume breakout spike detected</span>
+                <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 rounded font-bold uppercase">OI SPIKE</span>
+                <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 rounded font-bold uppercase">BULLISH</span>
               </div>
+              <p class="text-xs text-slate-400">Unusual spike in volume with cumulative option writing interest scaling +340% over historical 5-day baseline.</p>
+            </div>
+          </div>
+          <button class="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-all">View Details</button>
+        </div>
 
-              <div>
-                <div class="flex justify-between text-xs font-semibold mb-1">
-                  <span class="text-slate-400">DII Net Stock Flow</span>
-                  <span class="text-rose-400">-450 Cr</span>
-                </div>
-                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div class="bg-rose-500 h-full" style="width: 30%"></div>
-                </div>
+        <!-- Signal Item -->
+        <div class="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-slate-800/20 transition-all">
+          <div class="flex items-start gap-3">
+            <span class="text-xs font-mono text-slate-500 pt-0.5">14:28:45</span>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-200">BANKNIFTY futures crossed key resistance level</span>
+                <span class="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 rounded font-bold uppercase">TECHNICAL</span>
+                <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 rounded font-bold uppercase">BULLISH</span>
               </div>
+              <p class="text-xs text-slate-400">Bank Nifty futures crossed major technical resistance of 47,800. Strong price volume action suggests upward build-up continuation.</p>
+            </div>
+          </div>
+          <button class="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-all">View Details</button>
+        </div>
+
+        <!-- Signal Item -->
+        <div class="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-slate-800/20 transition-all">
+          <div class="flex items-start gap-3">
+            <span class="text-xs font-mono text-slate-500 pt-0.5">14:24:12</span>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-200">IV percentile weekly options crossed 85th percentile</span>
+                <span class="text-[9px] bg-amber-500/10 text-amber-400 px-1.5 rounded font-bold uppercase">VOLATILITY</span>
+                <span class="text-[9px] bg-slate-800 text-slate-300 px-1.5 rounded font-bold uppercase">NEUTRAL</span>
+              </div>
+              <p class="text-xs text-slate-400">Volatility index showing sharp adjustments ahead of weekly expiry settlements.</p>
+            </div>
+          </div>
+          <button class="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-all">View Details</button>
+        </div>
+
+      </div>
+
+      <!-- Signals Stats Row -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-[#090d16] border border-slate-800 rounded-2xl text-center">
+        <div>
+          <span class="text-xs font-bold text-slate-200 block">847</span>
+          <span class="text-[10px] text-slate-500 uppercase font-semibold">Signals Today</span>
+        </div>
+        <div>
+          <span class="text-xs font-bold text-emerald-400 block">73%</span>
+          <span class="text-[10px] text-slate-500 uppercase font-semibold">Accuracy Rate</span>
+        </div>
+        <div>
+          <span class="text-xs font-bold text-slate-200 block">24ms</span>
+          <span class="text-[10px] text-slate-500 uppercase font-semibold">Query Latency</span>
+        </div>
+        <div>
+          <span class="text-xs font-bold text-slate-200 block">500+</span>
+          <span class="text-[10px] text-slate-500 uppercase font-semibold">Data Points / Sec</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- OPTIONS MAX PAIN & MULTI-STRIKE OPEN INTEREST -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Options Max Pain & Multi-Strike Open Interest</h2>
+        <p class="text-xs text-slate-400">Visualization of Call and Put open interest distribution across key strike prices to identify pain levels.</p>
+      </div>
+
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800/60 pb-3">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Strike Analysis Chart</span>
+          <span class="text-xs text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-0.5 rounded-full">MAX PAIN FOCUS: 22,450</span>
+        </div>
+        <div class="h-64">
+          <canvas id="maxPainBarChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- IMPLIED VOLATILITY (IV) vs HISTORICAL VOLATILITY (HV) -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Implied Volatility (IV) vs Historical Volatility (HV) Analysis</h2>
+        <p class="text-xs text-slate-400">Track real-time IV against 30-day historical volatility to identify potential market mispricings and trading opportunities.</p>
+      </div>
+
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4">
+        <div class="h-64">
+          <canvas id="ivHvLineChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE INSTITUTIONAL BLOCK TRADES & VOLUME SPIKES -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Live Institutional Block Trades & Volume Spikes</h2>
+        <p class="text-xs text-slate-400">Real-time tracking of large institutional orders and significant volume movements across F&O segments.</p>
+      </div>
+
+      <div class="bg-[#090d16] border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950/40 text-slate-400 border-b border-slate-800 select-none">
+                <th class="p-4 font-bold">TIMESTAMP</th>
+                <th class="p-4 font-bold">SYMBOL / ASSET</th>
+                <th class="p-4 font-bold text-center">VOLUME</th>
+                <th class="p-4 font-bold text-right">ORDER VALUE (CR)</th>
+                <th class="p-4 font-bold text-center">EXECUTION TYPE</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50 text-slate-300">
+              <tr class="hover:bg-slate-800/10">
+                <td class="p-4 font-mono text-slate-500">14:32:18</td>
+                <td class="p-4 font-bold text-slate-200">NIFTY 22500 CE</td>
+                <td class="p-4 text-center font-mono">1,50,000 QTY</td>
+                <td class="p-4 text-right font-bold text-emerald-400">₹14.2 CR</td>
+                <td class="p-4 text-center">
+                  <span class="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2.5 py-0.5 rounded font-semibold text-[10px]">Block Trade</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-800/10">
+                <td class="p-4 font-mono text-slate-500">14:31:15</td>
+                <td class="p-4 font-bold text-slate-200">BANKNIFTY 48000 PE</td>
+                <td class="p-4 text-center font-mono">85,000 QTY</td>
+                <td class="p-4 text-right font-bold text-emerald-400">₹9.8 CR</td>
+                <td class="p-4 text-center">
+                  <span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded font-semibold text-[10px]">Long Build-up</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-800/10">
+                <td class="p-4 font-mono text-slate-500">14:25:40</td>
+                <td class="p-4 font-bold text-slate-200">RELIANCE FUT</td>
+                <td class="p-4 text-center font-mono">2,25,000 QTY</td>
+                <td class="p-4 text-right font-bold text-emerald-400">₹21.5 CR</td>
+                <td class="p-4 text-center">
+                  <span class="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2.5 py-0.5 rounded font-semibold text-[10px]">Block Trade</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- GLOBAL CROSS-ASSET OPTIONS & MACRO INDICATORS -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Global Cross-Asset Options & Macro Indicators</h2>
+        <p class="text-xs text-slate-400">Monitor key global derivative and macro indicators influencing Indian F&O markets.</p>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- CBOE VIX -->
+        <div class="bg-[#090d16] border border-slate-800 p-4 rounded-2xl flex flex-col justify-between h-24">
+          <span class="text-[10px] text-slate-500 font-bold uppercase">CBOE VIX</span>
+          <span class="text-xl font-extrabold text-slate-100">14.82</span>
+          <span class="text-[9px] text-slate-500">Fear gauge showing low market anxiety</span>
+        </div>
+        <!-- US Dollar Index -->
+        <div class="bg-[#090d16] border border-slate-800 p-4 rounded-2xl flex flex-col justify-between h-24">
+          <span class="text-[10px] text-slate-500 font-bold uppercase">US Dollar Index</span>
+          <span class="text-xl font-extrabold text-slate-100">104.35</span>
+          <span class="text-[9px] text-slate-500">Stable dollar strength and mixed indicators</span>
+        </div>
+        <!-- Global Index Futures -->
+        <div class="bg-[#090d16] border border-slate-800 p-4 rounded-2xl flex flex-col justify-between h-24">
+          <span class="text-[10px] text-slate-500 font-bold uppercase">Global Index Futures</span>
+          <span class="text-xl font-extrabold text-emerald-400">+1.2%</span>
+          <span class="text-[9px] text-slate-500">Risk-on sentiment in global markets</span>
+        </div>
+        <!-- Brent Crude Oil -->
+        <div class="bg-[#090d16] border border-slate-800 p-4 rounded-2xl flex flex-col justify-between h-24">
+          <span class="text-[10px] text-slate-500 font-bold uppercase">Brent Crude Oil</span>
+          <span class="text-xl font-extrabold text-slate-100">$78.45</span>
+          <span class="text-[9px] text-slate-500">Energy sector seeing profit booking</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARKET NEWS & INSIGHTS EDITORIAL GRID -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Market News & Insights</h2>
+        <p class="text-xs text-slate-400">Latest analysis from our editorial desk</p>
+      </div>
+
+      <!-- News Editorial Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Card 1 -->
+        <div class="bg-[#090d16] border border-slate-800 rounded-2xl overflow-hidden group hover:border-slate-700 transition-all">
+          <div class="p-5 space-y-3">
+            <span class="text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/25 px-2 py-0.5 rounded-full font-bold uppercase">Artificial Intelligence</span>
+            <h4 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-all leading-snug">AI-Powered Sentiment Indicators Highlight Key Market Reversals</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">Our advanced neural models identified deep institutional order flow imbalances prior to major structural changes in NIFTY options positioning...</p>
+            <div class="flex justify-between items-center text-[10px] text-slate-500 pt-2 border-t border-slate-850">
+              <span>3 hours ago</span>
+              <span>Read article</span>
             </div>
           </div>
         </div>
-      </section>
 
-    </main>
-  </div>
+        <!-- Card 2 -->
+        <div class="bg-[#090d16] border border-slate-800 rounded-2xl overflow-hidden group hover:border-slate-700 transition-all">
+          <div class="p-5 space-y-3">
+            <span class="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded-full font-bold uppercase">Market Analysis</span>
+            <h4 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-all leading-snug">Global Volatility Index Signals Major Shift in Institutional Positioning</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">FII cumulative derivative exposures stand aligned to risk-off paradigms, following structural shifts inside sovereign yields matrices...</p>
+            <div class="flex justify-between items-center text-[10px] text-slate-500 pt-2 border-t border-slate-850">
+              <span>5 hours ago</span>
+              <span>Read article</span>
+            </div>
+          </div>
+        </div>
 
+        <!-- Card 3 -->
+        <div class="bg-[#090d16] border border-slate-800 rounded-2xl overflow-hidden group hover:border-slate-700 transition-all">
+          <div class="p-5 space-y-3">
+            <span class="text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/25 px-2 py-0.5 rounded-full font-bold uppercase">Regulation</span>
+            <h4 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-all leading-snug">New Derivative Trading Rules Set to Reshape F&O Landscape in 2026</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">Market participants prepare for structural modifications to weekly options pricing and margin requirements adjustments coming this winter...</p>
+            <div class="flex justify-between items-center text-[10px] text-slate-500 pt-2 border-t border-slate-850">
+              <span>12 hours ago</span>
+              <span>Read article</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- REUSABLE CHART SCRIPTS -->
   <script>
     // Initialize Lucide Icons
     lucide.createIcons();
 
-    // Mobile Navigation Drawer Toggle Handler
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const closeMobileMenuBtn = document.getElementById('closeMobileMenuBtn');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
+    // Chart Global Styling defaults
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.04)';
 
-    function toggleSidebar() {
-      sidebar.classList.toggle('-translate-x-full');
-      overlay.classList.toggle('hidden');
-    }
-
-    mobileMenuBtn.addEventListener('click', toggleSidebar);
-    closeMobileMenuBtn.addEventListener('click', toggleSidebar);
-    overlay.addEventListener('click', toggleSidebar);
-
-    // Single Page View Switcher
-    function switchView(viewId) {
-      // Hide all panels
-      document.querySelectorAll('.view-panel').forEach(panel => {
-        panel.classList.add('hidden');
-      });
-      // Show chosen panel
-      document.getElementById(`view-${viewId}`).classList.remove('hidden');
-
-      // Update sidebar navigation buttons
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.className = "nav-btn w-full flex items-center justify-between lg:justify-start px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 font-medium text-xs transition-all";
-        
-        // Remove trailing dot indicators
-        const dot = btn.querySelector('.rounded-full');
-        if (dot) dot.remove();
-      });
-
-      const activeBtn = document.getElementById(`nav-${viewId}`);
-      activeBtn.className = "nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 font-medium text-xs transition-all";
-      
-      // Append right side notification point
-      const activeDot = document.createElement('span');
-      activeDot.className = "w-1.5 h-1.5 bg-emerald-400 rounded-full";
-      activeBtn.appendChild(activeDot);
-
-      // Close mobile drawer on link click
-      if (!sidebar.classList.contains('-translate-x-full')) {
-        toggleSidebar();
-      }
-    }
-
-    // Chart.js Default Visual Configuration
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.05)';
-
-    // Overview Chart.js Implementation
-    const overviewOiCtx = document.getElementById('overviewOiChart').getContext('2d');
-    new Chart(overviewOiCtx, {
+    // Hero Miniature Chart (Grouped lines/bars visual layout)
+    const heroCtx = document.getElementById('heroMiniChart').getContext('2d');
+    new Chart(heroCtx, {
       type: 'bar',
       data: {
-        labels: ['22200', '22250', '22300', '22350', '22400', '22450', '22500'],
+        labels: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'],
         datasets: [
           {
-            label: 'Call Open Interest',
-            data: [3.4, 5.1, 12.4, 18.1, 25.3, 8.9, 31.4],
-            backgroundColor: 'rgba(239, 68, 68, 0.85)',
-            borderRadius: 5,
+            label: 'Calls OI',
+            data: [4, 6, 12, 18, 25, 12, 28, 14, 30],
+            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+            borderRadius: 3
           },
           {
-            label: 'Put Open Interest',
-            data: [35.2, 19.8, 41.2, 28.5, 33.1, 12.4, 9.8],
-            backgroundColor: 'rgba(16, 185, 129, 0.85)',
-            borderRadius: 5,
+            label: 'Puts OI',
+            data: [15, 18, 24, 20, 22, 10, 8, 4, 1],
+            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+            borderRadius: 3
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10 } } }
-        },
+        plugins: { legend: { display: false } },
+        scales: { x: { display: false }, y: { display: false } }
+      }
+    });
+
+    // Feature Chart Mockup (Candlestick outline)
+    const featureCtx = document.getElementById('featureChart').getContext('2d');
+    new Chart(featureCtx, {
+      type: 'line',
+      data: {
+        labels: ['09:15', '10:15', '11:15', '12:15', '13:15', '14:15', '15:15'],
+        datasets: [{
+          data: [22300, 22350, 22320, 22420, 22400, 22480, 22453.8],
+          borderColor: '#10b981',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#10b981',
+          fill: false,
+          tension: 0.2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } } }
+      }
+    });
+
+    // Options Strategy Payoff Diagram Curve Chart
+    const payoffCtx = document.getElementById('payoffChart').getContext('2d');
+    let payoffChart = new Chart(payoffCtx, {
+      type: 'line',
+      data: {
+        labels: ['22100', '22200', '22300', '22400', '22500', '22600', '22700'],
+        datasets: [{
+          label: 'Payoff Value (₹)',
+          data: [-3200, -3200, -1800, 2200, 5400, 5400, 5400],
+          borderColor: '#10b981',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointBackgroundColor: '#030712',
+          tension: 0.1,
+          fill: {
+            target: 'origin',
+            above: 'rgba(16, 185, 129, 0.05)',
+            below: 'rgba(239, 68, 68, 0.05)'
+          }
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false } },
           y: { grid: { color: 'rgba(148, 163, 184, 0.04)' } }
@@ -760,83 +1092,190 @@
       }
     });
 
-    // Multi-Strike Large Analysis Chart
-    const multiStrikeCtx = document.getElementById('multiStrikeLargeChart').getContext('2d');
-    new Chart(multiStrikeCtx, {
+    // Strategy Blueprint Click Tab Toggle
+    function switchStrategy(type) {
+      // Manage Active Tab UI
+      const tabs = ['bullish', 'bearish', 'volatile', 'sideways'];
+      tabs.forEach(tab => {
+        const dom = document.getElementById(`strat-tab-${tab}`);
+        if (dom) {
+          dom.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all";
+        }
+      });
+      document.getElementById(`strat-tab-${type}`).className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 transition-all";
+
+      // Dynamically update strategy descriptions and Payoff Curve values
+      const details = {
+        bullish: {
+          title: "Bull Call Spread",
+          desc: "Buy ATM Call, Sell OTM Call contract.",
+          profit: "₹5,400",
+          loss: "₹3,200",
+          breakeven: "22,350",
+          win: "62%",
+          data: [-3200, -3200, -1800, 2200, 5400, 5400, 5400],
+          color: '#10b981'
+        },
+        bearish: {
+          title: "Bear Put Spread",
+          desc: "Buy ATM Put, Sell OTM Put contract.",
+          profit: "₹6,100",
+          loss: "₹2,900",
+          breakeven: "22,450",
+          win: "58%",
+          data: [5400, 5400, 2200, -1800, -3200, -3200, -3200],
+          color: '#ef4444'
+        },
+        volatile: {
+          title: "Long Straddle",
+          desc: "Buy ATM Call and Put contract simultaneously.",
+          profit: "Unlimited",
+          loss: "₹5,800",
+          breakeven: "22,150 / 22,650",
+          win: "45%",
+          data: [8200, 4200, 200, -3800, 200, 4200, 8200],
+          color: '#3b82f6'
+        },
+        sideways: {
+          title: "Short Iron Condor",
+          desc: "Sell inner Call/Put, Buy outer protection.",
+          profit: "₹4,100",
+          loss: "₹2,100",
+          breakeven: "22,250 / 22,550",
+          win: "72%",
+          data: [-2100, -1100, 2900, 4100, 2900, -1100, -2100],
+          color: '#f59e0b'
+        }
+      };
+
+      const selected = details[type];
+      document.getElementById('strategy-details').innerHTML = `
+        <div class="bg-[#030712] p-3 rounded-xl border border-slate-800">
+          <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 rounded font-bold uppercase">RECOMMENDED</span>
+          <h4 class="text-sm font-bold text-white mt-1">${selected.title}</h4>
+          <p class="text-[10px] text-slate-500 mt-0.5">${selected.desc}</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <span class="text-slate-500 block">Max Profit</span>
+            <span class="font-bold text-emerald-400">${selected.profit}</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">Max Loss</span>
+            <span class="font-bold text-rose-400">${selected.loss}</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">Breakeven</span>
+            <span class="font-bold text-slate-300">${selected.breakeven}</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">Win Probability</span>
+            <span class="font-bold text-emerald-400">${selected.win}</span>
+          </div>
+        </div>
+      `;
+
+      // Update Chart visually
+      payoffChart.data.datasets[0].data = selected.data;
+      payoffChart.data.datasets[0].borderColor = selected.color;
+      payoffChart.update();
+    }
+
+    // Implied Volatility (IV) Skew Smile Chart
+    const skewCtx = document.getElementById('skewChart').getChannel ? null : document.getElementById('skewChart').getContext('2d');
+    new Chart(skewCtx, {
       type: 'line',
       data: {
-        labels: ['09:15', '10:15', '11:15', '12:15', '13:15', '14:15', '15:15'],
+        labels: ['22100', '22200', '22300', '22400', '22500', '22600', '22700'],
+        datasets: [{
+          label: 'Implied Volatility (IV %)',
+          data: [17.5, 14.8, 12.9, 12.4, 13.5, 15.6, 18.2],
+          borderColor: '#3b82f6',
+          borderWidth: 2,
+          pointBackgroundColor: '#3b82f6',
+          tension: 0.4,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(148, 163, 184, 0.04)' } }
+        }
+      }
+    });
+
+    // Options Max Pain Bar Chart Analysis
+    const maxPainCtx = document.getElementById('maxPainBarChart').getContext('2d');
+    new Chart(maxPainCtx, {
+      type: 'bar',
+      data: {
+        labels: ['22300', '22400', '22450 (Max Pain)', '22500', '22550', '22600'],
         datasets: [
           {
-            label: '22400 Calls (OI Change)',
-            data: [2, 5, 12, 18, 22, 25, 29],
-            borderColor: '#ef4444',
-            borderWidth: 2,
-            tension: 0.3,
-            pointRadius: 1
+            label: 'Calls OI',
+            data: [12.4, 25.3, 35.1, 8.9, 15.6, 42.8],
+            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+            borderRadius: 4
           },
           {
-            label: '22400 Puts (OI Change)',
-            data: [5, 12, 18, 24, 29, 31, 33],
-            borderColor: '#10b981',
-            borderWidth: 2,
-            tension: 0.3,
-            pointRadius: 1
+            label: 'Puts OI',
+            data: [41.2, 33.1, 45.4, 12.4, 3.2, 1.4],
+            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+            borderRadius: 4
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } }
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(148, 163, 184, 0.04)' } }
         }
       }
     });
 
-    // FII Long Short Pie Chart
-    const fiiCtx = document.getElementById('fiiPieChart').getContext('2d');
-    new Chart(fiiCtx, {
-      type: 'doughnut',
+    // IV vs HV Line Chart Analysis
+    const ivHvCtx = document.getElementById('ivHvLineChart').getContext('2d');
+    new Chart(ivHvCtx, {
+      type: 'line',
       data: {
-        labels: ['Index Longs', 'Index Shorts'],
-        datasets: [{
-          data: [58.4, 41.6],
-          backgroundColor: ['#10b981', '#ef4444'],
-          borderWidth: 0
-        }]
+        labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9', 'Day 10'],
+        datasets: [
+          {
+            label: 'Implied Volatility (IV)',
+            data: [13.4, 14.1, 13.9, 14.5, 15.2, 14.8, 14.1, 13.8, 13.5, 12.4],
+            borderColor: '#3b82f6',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: false
+          },
+          {
+            label: 'Historical Volatility (HV)',
+            data: [12.1, 12.3, 12.4, 12.2, 12.5, 12.8, 12.6, 12.4, 12.3, 12.2],
+            borderColor: '#a855f7',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: false
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } }
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(148, 163, 184, 0.04)' } }
         }
       }
     });
-
-    // Simulated Live Index Tickers Movement Engine
-    setInterval(() => {
-      const inputs = [
-        { id: 'ticker-nifty', base: 22453.80, variance: 5.5 },
-        { id: 'ticker-banknifty', base: 47840.15, variance: 14.2 },
-        { id: 'ticker-vix', base: 13.42, variance: 0.15 }
-      ];
-
-      inputs.forEach(el => {
-        const itemDom = document.getElementById(el.id);
-        if (itemDom) {
-          const shift = (Math.random() - 0.5) * el.variance;
-          const finalVal = (parseFloat(itemDom.innerText.replace(/,/g, '')) + shift).toFixed(2);
-          itemDom.innerText = parseFloat(finalVal).toLocaleString('en-IN', { minimumFractionDigits: 2 });
-          
-          itemDom.classList.add('scale-105', 'text-yellow-400');
-          setTimeout(() => itemDom.classList.remove('scale-105', 'text-yellow-400'), 300);
-        }
-      });
-    }, 3500);
-
   </script>
 </body>
 </html>
