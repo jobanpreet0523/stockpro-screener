@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>F&O Analytics — Live Option Chain</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM — LUXURY DARK TERMINAL
+═══════════════════════════════════════════════ */
+:root{
+  --bg:       #0d1117;
+  --surface:  #161b22;
+  --surface2: #1c2128;
+  --surface3: #21262d;
+  --border:   rgba(255,255,255,.08);
+  --border2:  rgba(255,255,255,.14);
+
+  /* Brand */
+  --blue:     #58a6ff;
+  --blue2:    #1f6feb;
+  --purple:   #bc8cff;
+  --cyan:     #39d3f5;
+
+  /* F&O specific */
+  --call:     #00ff80;
+  --call2:    rgba(0,255,128,.12);
+  --call3:    rgba(0,255,128,.06);
+  --put:      #ff4d4d;
+  --put2:     rgba(255,77,77,.12);
+  --put3:     rgba(255,77,77,.06);
+  --atm:      rgba(250,204,21,.08);
+  --atm-b:    rgba(250,204,21,.35);
+  --amber:    #fac516;
+  --amber2:   rgba(250,197,22,.15);
+  --green:    #3fb950;
+  --red:      #f85149;
+
+  --text:     #e6edf3;
+  --text2:    #8b949e;
+  --text3:    #484f58;
+  --text4:    #30363d;
+
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', system-ui, sans-serif;
+
+  --r4:4px;--r6:6px;--r8:8px;--r10:10px;--r12:12px;
+  --shadow: 0 8px 32px rgba(0,0,0,.5);
+  --glow-call: 0 0 12px rgba(0,255,128,.2);
+  --glow-put:  0 0 12px rgba(255,77,77,.2);
+}
+
+/* ─── RESET ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  line-height:1.5;
+}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#484f58}
+input,select,button{font-family:inherit}
+input,select{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:var(--r6);
+  padding:7px 11px;
+  font-size:13px;
+  outline:none;
+  transition:.15s;
+}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(88,166,255,.12)}
+select option{background:var(--surface2)}
+button{cursor:pointer}
+::selection{background:rgba(88,166,255,.25);color:var(--text)}
+
+/* ─── SUBTLE GRID BG ─── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(88,166,255,.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(88,166,255,.015) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+
+.app{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* ═══════════════════════════════════════════════
+   TOP BAR
+═══════════════════════════════════════════════ */
+.topbar{
+  background:rgba(13,17,23,.95);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 20px;
+  height:52px;
+  display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:100;
+}
+.topbar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(88,166,255,.3),transparent);
+}
+.logo{
+  display:flex;align-items:center;gap:8px;
+  font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.3px;
+  padding-right:20px;border-right:1px solid var(--border);
+  text-decoration:none;
+}
+.logo-badge{
+  background:linear-gradient(135deg,#f85149,#ff7b72);
+  color:#fff;font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:var(--r4);letter-spacing:.5px;
+}
+.logo em{color:var(--text2);font-style:normal;font-weight:400}
+
+/* Filter bar */
+.filter-bar{display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap}
+.filter-group{display:flex;flex-direction:column;gap:2px}
+.filter-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)}
+.filter-select{min-width:130px;font-weight:600}
+.spot-chip{
+  display:flex;flex-direction:column;align-items:flex-start;
+  padding:5px 14px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--r8);
+  min-width:130px;
+}
+.spot-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)}
+.spot-value{
+  font-size:16px;font-weight:700;
+  font-family:var(--mono);
+  color:var(--text);
+  display:flex;align-items:center;gap:6px;
+}
+.spot-chg{font-size:11px;font-weight:600;font-family:var(--mono)}
+.spot-up{color:var(--call)}
+.spot-dn{color:var(--put)}
+.live-badge{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 10px;
+  background:rgba(63,185,80,.1);
+  border:1px solid rgba(63,185,80,.25);
+  border-radius:20px;
+  font-size:11px;font-weight:600;color:var(--green);
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
+.topbar-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.top-btn{
+  padding:6px 14px;border-radius:var(--r6);border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);font-size:12px;font-weight:500;
+  transition:.15s;
+}
+.top-btn:hover{border-color:var(--border2);color:var(--text)}
+.top-btn.pri{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.top-btn.pri:hover{background:#388bfd}
+.ist-time{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* ═══════════════════════════════════════════════
+   ANALYTICS CARDS
+═══════════════════════════════════════════════ */
+.analytics-strip{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:12px;
+  padding:16px 20px;
+  background:rgba(22,27,34,.5);
+  border-bottom:1px solid var(--border);
+}
+.acard{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r10);
+  padding:14px 16px;
+  position:relative;overflow:hidden;
+  transition:.2s;
+}
+.acard::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  border-radius:var(--r10) var(--r10) 0 0;
+}
+.acard-blue::before{background:linear-gradient(90deg,var(--blue),var(--purple))}
+.acard-green::before{background:linear-gradient(90deg,var(--call),#00d4aa)}
+.acard-red::before{background:linear-gradient(90deg,var(--put),#ff8c00)}
+.acard-amber::before{background:linear-gradient(90deg,var(--amber),#ff9f0a)}
+.acard:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--shadow)}
+.acard-label{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--text3);margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+.acard-icon{font-size:13px}
+.acard-value{font-size:26px;font-weight:800;font-family:var(--mono);line-height:1}
+.acard-sub{font-size:11px;color:var(--text2);margin-top:4px;display:flex;align-items:center;gap:6px}
+.acard-badge{
+  padding:2px 8px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:.3px;
+}
+.badge-bull{background:rgba(0,255,128,.12);color:var(--call);border:1px solid rgba(0,255,128,.2)}
+.badge-bear{background:rgba(255,77,77,.12);color:var(--put);border:1px solid rgba(255,77,77,.2)}
+.badge-neutral{background:rgba(250,197,22,.1);color:var(--amber);border:1px solid rgba(250,197,22,.2)}
+
+/* PCR Bar */
+.pcr-bar-wrap{
+  margin-top:8px;height:5px;
+  background:rgba(255,255,255,.06);
+  border-radius:3px;overflow:hidden;
+}
+.pcr-bar{height:100%;border-radius:3px;transition:width 1s ease}
+
+/* Max Pain */
+.mp-strikes{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.mp-strike{
+  padding:2px 8px;border-radius:var(--r4);
+  font-size:11px;font-weight:600;font-family:var(--mono);
+  background:rgba(250,197,22,.1);color:var(--amber);
+  border:1px solid rgba(250,197,22,.2);
+}
+
+/* Momentum banner */
+.momentum-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.mom-tag{
+  padding:3px 10px;border-radius:var(--r4);
+  font-size:11px;font-weight:700;
+  display:flex;align-items:center;gap:4px;
+}
+.mom-long{background:rgba(0,255,128,.1);color:var(--call);border:1px solid rgba(0,255,128,.18)}
+.mom-short{background:rgba(255,77,77,.08);color:var(--put);border:1px solid rgba(255,77,77,.15)}
+.mom-cover{background:rgba(57,211,245,.08);color:var(--cyan);border:1px solid rgba(57,211,245,.18)}
+
+/* ═══════════════════════════════════════════════
+   OPTION CHAIN TABLE
+═══════════════════════════════════════════════ */
+.chain-wrap{
+  padding:0 20px 28px;
+  flex:1;
+}
+.chain-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0 10px;flex-wrap:wrap;gap:8px;
+}
+.chain-title{
+  font-size:15px;font-weight:700;color:var(--text);
+  display:flex;align-items:center;gap:10px;
+}
+.chain-subtitle{font-size:12px;color:var(--text3);margin-left:2px}
+.chain-actions{display:flex;gap:7px;align-items:center}
+.chain-legend{display:flex;gap:10px;align-items:center;font-size:11px;color:var(--text2)}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+.leg-call{background:var(--call)}
+.leg-put{background:var(--put)}
+.leg-atm{background:var(--amber)}
+.leg-itm{background:rgba(88,166,255,.5)}
+
+.chain-container{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r12);
+  overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+
+/* Table header sections */
+.chain-col-header{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 100px 1fr 1fr 1fr 1fr 1fr 1fr;
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+}
+.ch-calls{
+  grid-column:1/7;
+  padding:8px 12px;
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--call);
+  border-right:1px solid var(--border);
+  text-align:center;
+  background:rgba(0,255,128,.04);
+}
+.ch-strike{
+  grid-column:7/8;
+  padding:8px 4px;
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--amber);
+  text-align:center;
+  background:rgba(250,197,22,.04);
+}
+.ch-puts{
+  grid-column:8/14;
+  padding:8px 12px;
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--put);
+  border-left:1px solid var(--border);
+  text-align:center;
+  background:rgba(255,77,77,.04);
+}
+
+/* Sub header row */
+.chain-sub-header{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 100px 1fr 1fr 1fr 1fr 1fr 1fr;
+  background:rgba(22,27,34,.8);
+  border-bottom:2px solid var(--border);
+  position:sticky;top:52px;z-index:10;
+}
+.sh-cell{
+  padding:7px 8px;
+  font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--text3);
+  cursor:pointer;user-select:none;transition:.12s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sh-cell:hover{color:var(--text2)}
+.sh-right{text-align:right}
+.sh-center{text-align:center}
+.sh-strike-h{
+  background:rgba(250,197,22,.06);
+  color:var(--amber);text-align:center;
+  border-left:1px solid rgba(250,197,22,.15);
+  border-right:1px solid rgba(250,197,22,.15);
+}
+.sh-call-h{color:var(--call) !important;background:rgba(0,255,128,.03)}
+.sh-put-h{color:var(--put) !important;background:rgba(255,77,77,.03)}
+
+/* Body rows */
+.chain-body{overflow-y:auto;max-height:calc(100vh - 320px)}
+.chain-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 100px 1fr 1fr 1fr 1fr 1fr 1fr;
+  border-bottom:1px solid rgba(255,255,255,.03);
+  transition:background .1s;
+  cursor:pointer;
+  position:relative;
+}
+.chain-row:last-child{border-bottom:none}
+.chain-row:hover{background:rgba(88,166,255,.04)!important}
+
+/* ITM / OTM / ATM row variants */
+.row-call-itm{background:rgba(0,255,128,.035)}
+.row-put-itm{background:rgba(255,77,77,.03)}
+.row-atm{
+  background:rgba(250,197,22,.06)!important;
+  border-top:1px solid rgba(250,197,22,.25)!important;
+  border-bottom:1px solid rgba(250,197,22,.25)!important;
+}
+.row-atm-marker{
+  position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--amber),rgba(250,197,22,.3));
+}
+
+/* Cells */
+.cell{
+  padding:9px 8px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--text2);
+  display:flex;align-items:center;justify-content:flex-end;
+  white-space:nowrap;
+}
+.cell-left{justify-content:flex-start}
+.cell-center{justify-content:center}
+.cell-ltp-call{color:var(--call);font-weight:600}
+.cell-ltp-put{color:var(--put);font-weight:600}
+.cell-strike{
+  justify-content:center;font-weight:700;
+  font-size:12.5px;color:var(--text);
+  background:rgba(250,197,22,.04);
+  border-left:1px solid rgba(250,197,22,.12);
+  border-right:1px solid rgba(250,197,22,.12);
+}
+.atm-strike-cell{
+  color:var(--amber)!important;font-weight:800!important;
+  background:rgba(250,197,22,.1)!important;
+  border-left:1px solid rgba(250,197,22,.3)!important;
+  border-right:1px solid rgba(250,197,22,.3)!important;
+}
+.cell-chg-up{color:var(--call)}
+.cell-chg-dn{color:var(--put)}
+.cell-iv{color:var(--purple)}
+
+/* OI Bar visualization inside cell */
+.oi-bar-wrap{
+  display:flex;align-items:center;gap:5px;width:100%;
+}
+.oi-bar-bg{
+  flex:1;height:3px;
+  background:rgba(255,255,255,.05);
+  border-radius:2px;overflow:hidden;
+}
+.oi-bar-fill{height:100%;border-radius:2px}
+.oib-call{background:linear-gradient(90deg,var(--call),rgba(0,255,128,.5))}
+.oib-put{background:linear-gradient(90deg,var(--put),rgba(255,77,77,.5))}
+.oi-val{min-width:45px;text-align:right;font-size:11.5px}
+
+/* OI Change badges */
+.oic-badge{
+  padding:1px 6px;border-radius:3px;
+  font-size:10.5px;font-weight:600;
+  white-space:nowrap;
+}
+.oic-up{background:rgba(0,255,128,.1);color:var(--call)}
+.oic-dn{background:rgba(255,77,77,.08);color:var(--put)}
+
+/* Vol badge */
+.vol-val{font-size:11.5px;color:var(--text2)}
+
+/* ═══════════════════════════════════════════════
+   FOOTER STATUS BAR
+═══════════════════════════════════════════════ */
+.status-bar{
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:6px 20px;
+  display:flex;align-items:center;gap:16px;
+  font-size:11px;color:var(--text3);
+  flex-wrap:wrap;
+}
+.status-item{display:flex;align-items:center;gap:5px}
+.status-item b{color:var(--text2)}
+.status-sep{width:1px;height:12px;background:var(--border)}
+
+/* ═══════════════════════════════════════════════
+   OI TREND MINI CHART
+═══════════════════════════════════════════════ */
+.oi-chart-row{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;padding:0 20px 16px;
+}
+.oi-chart-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r10);
+  padding:14px;
+}
+.occ-title{
+  font-size:11px;font-weight:700;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;
+}
+.oi-bars{display:flex;align-items:flex-end;gap:3px;height:60px}
+.oi-bar-col{
+  flex:1;border-radius:2px 2px 0 0;
+  transition:height .5s ease;
+  min-height:4px;
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media(max-width:1100px){
+  .chain-col-header,.chain-sub-header,.chain-row{
+    grid-template-columns:0.8fr 0.8fr 0.7fr 0.7fr 0.9fr 0.7fr 90px 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr 0.7fr;
+  }
+}
+@media(max-width:900px){
+  .analytics-strip{grid-template-columns:1fr 1fr}
+  .oi-chart-row{grid-template-columns:1fr}
+  .topbar{height:auto;padding:10px 14px;flex-wrap:wrap;gap:8px}
+  .chain-body{max-height:50vh}
+}
+@media(max-width:640px){
+  .analytics-strip{grid-template-columns:1fr}
+  .chain-col-header{display:none}
+  .chain-sub-header{display:none}
+  .chain-row{
+    display:flex;flex-direction:column;
+    padding:10px 12px;
+    gap:4px;
+  }
+  .cell{font-size:12px;padding:2px 0}
+  .topbar{gap:6px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ TOP BAR ══ -->
+<header class="topbar">
+  <a class="logo" href="#">
+    <span class="logo-badge">F&O</span>
+    <span>Analytics<em> Pro</em></span>
+  </a>
+
+  <div class="filter-bar">
+    <!-- Index Selector -->
+    <div class="filter-group">
+      <div class="filter-label">Index</div>
+      <select class="filter-select" id="indexSel" onchange="changeIndex()">
+        <option value="NIFTY">NIFTY 50</option>
+        <option value="BANKNIFTY">BANK NIFTY</option>
+        <option value="FINNIFTY">FIN NIFTY</option>
+      </select>
+    </div>
+
+    <!-- Expiry -->
+    <div class="filter-group">
+      <div class="filter-label">Expiry</div>
+      <select class="filter-select" id="expirySel" onchange="changeExpiry()">
+      </select>
+    </div>
+
+    <!-- Spot Price -->
+    <div class="spot-chip">
+      <div class="spot-label">Spot Price</div>
+      <div class="spot-value">
+        <span id="spotPrice">—</span>
+        <span class="spot-chg" id="spotChg"></span>
+      </div>
+    </div>
+
+    <!-- ATM Strike -->
+    <div class="spot-chip" style="min-width:110px">
+      <div class="spot-label">ATM Strike</div>
+      <div class="spot-value" style="color:var(--amber)" id="atmStrike">—</div>
+    </div>
+
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+  </div>
+
+  <div class="topbar-r">
+    <button class="top-btn" onclick="refreshAll()">↻ Refresh</button>
+    <button class="top-btn pri" onclick="toggleAutoRefresh()" id="autoBtn">⏱ Auto: OFF</button>
+    <span class="ist-time" id="ist">—</span>
+  </div>
+</header>
+
+<!-- ══ ANALYTICS CARDS ══ -->
+<div class="analytics-strip">
+
+  <!-- PCR Tracker -->
+  <div class="acard acard-green">
+    <div class="acard-label"><span class="acard-icon">📊</span> Put-Call Ratio (PCR)</div>
+    <div class="acard-value" id="pcrValue" style="color:var(--call)">1.18</div>
+    <div class="acard-sub">
+      OI Basis &nbsp;
+      <span class="acard-badge badge-bull" id="pcrBadge">Bullish Cushion</span>
+    </div>
+    <div class="pcr-bar-wrap">
+      <div class="pcr-bar" id="pcrBar" style="width:62%;background:linear-gradient(90deg,var(--put),var(--call))"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:9px;color:var(--text3)">
+      <span>Bearish 0.5</span><span>Neutral 1.0</span><span>Bullish 1.5+</span>
+    </div>
+  </div>
+
+  <!-- Max Pain -->
+  <div class="acard acard-amber">
+    <div class="acard-label"><span class="acard-icon">🎯</span> Max Pain Strike</div>
+    <div class="acard-value" id="maxPainVal" style="color:var(--amber)">—</div>
+    <div class="acard-sub">Expiry gravity zone</div>
+    <div class="mp-strikes" id="nearStrikes"></div>
+  </div>
+
+  <!-- Momentum -->
+  <div class="acard acard-blue">
+    <div class="acard-label"><span class="acard-icon">⚡</span> Market Momentum</div>
+    <div class="acard-value" id="momIndex" style="font-size:18px;color:var(--blue)">Loading…</div>
+    <div class="momentum-row" id="momTags"></div>
+  </div>
+
+  <!-- OI Summary -->
+  <div class="acard acard-red">
+    <div class="acard-label"><span class="acard-icon">📈</span> Total OI Summary</div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <div>
+        <div style="font-size:9px;color:var(--call);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Call OI</div>
+        <div class="acard-value" id="totalCallOI" style="font-size:18px;color:var(--call)">—</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:9px;color:var(--put);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Put OI</div>
+        <div class="acard-value" id="totalPutOI" style="font-size:18px;color:var(--put)">—</div>
+      </div>
+    </div>
+    <div class="pcr-bar-wrap" style="margin-top:10px">
+      <div id="oiRatioBar" style="height:5px;border-radius:3px;background:linear-gradient(90deg,var(--call),var(--put));width:100%"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ OI TREND MINI CHARTS ══ -->
+<div class="oi-chart-row">
+  <div class="oi-chart-card">
+    <div class="occ-title">📊 Call OI Distribution (Top Strikes)</div>
+    <div class="oi-bars" id="callOIBars"></div>
+    <div style="display:flex;gap:3px;margin-top:4px;font-size:9px;color:var(--text3)" id="callOILabels"></div>
+  </div>
+  <div class="oi-chart-card">
+    <div class="occ-title">📉 Put OI Distribution (Top Strikes)</div>
+    <div class="oi-bars" id="putOIBars"></div>
+    <div style="display:flex;gap:3px;margin-top:4px;font-size:9px;color:var(--text3)" id="putOILabels"></div>
+  </div>
+</div>
+
+<!-- ══ OPTION CHAIN ══ -->
+<div class="chain-wrap">
+  <div class="chain-header">
+    <div>
+      <div class="chain-title">
+        📋 Live Option Chain
+        <span id="chainExpLabel" style="font-size:12px;color:var(--text3);font-weight:400">—</span>
+      </div>
+    </div>
+    <div class="chain-actions">
+      <div class="chain-legend">
+        <span class="leg-dot leg-call"></span>CE/Calls
+        <span class="leg-dot leg-put" style="margin-left:6px"></span>PE/Puts
+        <span class="leg-dot leg-atm" style="margin-left:6px"></span>ATM
+        <span class="leg-dot leg-itm" style="margin-left:6px"></span>ITM
+      </div>
+      <button class="top-btn" onclick="changeStrikesShown(-5)">− Strikes</button>
+      <button class="top-btn" onclick="changeStrikesShown(5)">+ Strikes</button>
+    </div>
+  </div>
+
+  <div class="chain-container">
+
+    <!-- Column Group Headers -->
+    <div class="chain-col-header">
+      <div class="ch-calls">◀ CALLS (CE)</div>
+      <div class="ch-strike">STRIKE</div>
+      <div class="ch-puts">PUTS (PE) ▶</div>
+    </div>
+
+    <!-- Sub Headers -->
+    <div class="chain-sub-header">
+      <!-- CE -->
+      <div class="sh-cell sh-call-h sh-right">OI Chg</div>
+      <div class="sh-cell sh-call-h sh-right">Total OI</div>
+      <div class="sh-cell sh-call-h sh-right">Volume</div>
+      <div class="sh-cell sh-call-h sh-right">IV %</div>
+      <div class="sh-cell sh-call-h sh-right">LTP ₹</div>
+      <div class="sh-cell sh-call-h sh-right">Chg ₹</div>
+      <!-- Strike -->
+      <div class="sh-cell sh-strike-h sh-center">STRIKE</div>
+      <!-- PE -->
+      <div class="sh-cell sh-put-h sh-left">Chg ₹</div>
+      <div class="sh-cell sh-put-h sh-left">LTP ₹</div>
+      <div class="sh-cell sh-put-h sh-left">IV %</div>
+      <div class="sh-cell sh-put-h sh-left">Volume</div>
+      <div class="sh-cell sh-put-h sh-left">Total OI</div>
+      <div class="sh-cell sh-put-h sh-left">OI Chg</div>
+    </div>
+
+    <!-- Rows injected here -->
+    <div class="chain-body" id="chainBody">
+      <div style="display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);gap:12px">
+        <div style="width:18px;height:18px;border:2px solid #30363d;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
+        Loading option chain data…
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STATUS BAR ══ -->
+<div class="status-bar">
+  <div class="status-item">Data: <b>NSE (Simulated)</b></div>
+  <div class="status-sep"></div>
+  <div class="status-item">Last Update: <b id="lastUpdate">—</b></div>
+  <div class="status-sep"></div>
+  <div class="status-item">Strikes Shown: <b id="strikesCount">—</b></div>
+  <div class="status-sep"></div>
+  <div class="status-item">Underlying: <b id="statusIndex">NIFTY</b></div>
+  <div class="status-sep"></div>
+  <div class="status-item" style="margin-left:auto;color:var(--text3)">
+    For production use: integrate NSE API / Upstox / Angel One feed
+  </div>
+</div>
+
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<script>
+// ═══════════════════════════════════════════════
+//  F&O ANALYTICS ENGINE
+// ═══════════════════════════════════════════════
+
+// ─── INDEX CONFIG ───────────────────────────────
+const INDEX_CONFIG = {
+  NIFTY:     { spot: 22480, step: 50,  lotSize: 75  },
+  BANKNIFTY: { spot: 48250, step: 100, lotSize: 15  },
+  FINNIFTY:  { spot: 21150, step: 50,  lotSize: 40  },
+};
+
+// ─── STATE ──────────────────────────────────────
+let curIndex    = "NIFTY";
+let curExpiry   = "";
+let strikesShown = 14;  // total strikes to show (7 above + 7 below ATM)
+let autoRefreshTimer = null;
+let autoOn = false;
+let chainData = [];
+
+// ─── EXPIRY GENERATION ─────────────────────────
+function getExpiries(){
+  const dates = [];
+  const now = new Date();
+  // Weekly (next 4 Thursdays for NIFTY, next 4 Wednesdays for BANKNIFTY)
+  const expDay = curIndex === "BANKNIFTY" ? 3 : 4; // Wed=3, Thu=4
+  let d = new Date(now);
+  for(let i=0;i<52;i++){
+    d.setDate(d.getDate()+1);
+    if(d.getDay()===expDay){
+      const str = d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+      const tag = dates.length===0?"(Weekly - Current)":dates.length<4?"(Weekly)":"(Monthly)";
+      dates.push({val:str,label:str+" "+tag});
+      if(dates.length>=8)break;
+    }
+  }
+  return dates;
+}
+
+function populateExpiries(){
+  const sel = document.getElementById("expirySel");
+  sel.innerHTML = "";
+  const exps = getExpiries();
+  exps.forEach((e,i)=>{
+    const opt = document.createElement("option");
+    opt.value = e.val;
+    opt.textContent = e.label;
+    if(i===0)opt.selected = true;
+    sel.appendChild(opt);
+  });
+  curExpiry = exps[0]?.val || "";
+  document.getElementById("chainExpLabel").textContent = "Expiry: "+curExpiry;
+}
+
+// ─── RANDOM HELPERS ─────────────────────────────
+function seed(s){let h=0;for(let c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h;}
+function sr(s){let x=Math.sin(s+1)*10000;return x-Math.floor(x);}
+function rn(a,b,s){return +(a+(b-a)*sr(seed(s))).toFixed(2);}
+function ri(a,b,s){return Math.floor(a+(b-a)*sr(seed(s)));}
+
+// ─── GENERATE OPTION CHAIN DATA ────────────────
+function generateChain(index){
+  const cfg = INDEX_CONFIG[index];
+  const spot = cfg.spot + rn(-cfg.step*1.5, cfg.step*1.5, index+Date.now()%1000);
+  const atm = Math.round(spot / cfg.step) * cfg.step;
+  const strikes = [];
+  const half = Math.floor(strikesShown/2);
+  for(let i = -half; i <= half; i++){
+    strikes.push(atm + i * cfg.step);
+  }
+  const rows = strikes.map(strike=>{
+    const dist = (strike - atm) / atm;
+    const distAbs = Math.abs(dist);
+    // IV skew — higher for OTM
+    const ceIV = +(14 + distAbs*40 + rn(-2,3,strike+"ceiv")).toFixed(1);
+    const peIV = +(14 + distAbs*45 + rn(-2,3,strike+"peiv")).toFixed(1);
+    // LTP — intrinsic + time value
+    const ceIntrinsic = Math.max(0, spot - strike);
+    const peIntrinsic = Math.max(0, strike - spot);
+    const tv = Math.max(5, (ceIV/100) * spot * 0.15);
+    const ceLTP = +(ceIntrinsic + tv * Math.max(0.1, 1 - distAbs*3) + rn(-2,2,strike+"ceLTP")).toFixed(1);
+    const peLTP = +(peIntrinsic + tv * Math.max(0.1, 1 - distAbs*3) + rn(-2,2,strike+"peLTP")).toFixed(1);
+    const ceChg = +rn(-15,25,strike+"ceChg").toFixed(1);
+    const peChg = +rn(-20,18,strike+"peChg").toFixed(1);
+    // OI — higher near ATM
+    const oiFactor = Math.max(0.1, 1 - distAbs*5);
+    const ceOI = ri(10000, 800000, strike+"ceOI") * oiFactor | 0;
+    const peOI = ri(10000, 900000, strike+"peOI") * oiFactor | 0;
+    const ceOIChg = ri(-50000, 120000, strike+"ceOIChg");
+    const peOIChg = ri(-60000, 130000, strike+"peOIChg");
+    const ceVol = ri(1000, 200000, strike+"ceVol") * oiFactor | 0;
+    const peVol = ri(1000, 220000, strike+"peVol") * oiFactor | 0;
+    return{
+      strike, atm,
+      ce:{ ltp:Math.max(0.1,ceLTP), chg:ceChg, iv:ceIV, oi:ceOI, oiChg:ceOIChg, vol:ceVol },
+      pe:{ ltp:Math.max(0.1,peLTP), chg:peChg, iv:peIV, oi:peOI, oiChg:peOIChg, vol:peVol },
+    };
+  });
+  return{ spot:+spot.toFixed(2), atm, rows };
+}
+
+// ─── FORMAT NUMBERS ─────────────────────────────
+function fmtOI(n){
+  if(n>=100000)return (n/100000).toFixed(1)+"L";
+  if(n>=1000)return (n/1000).toFixed(1)+"K";
+  return n;
+}
+function fmtChg(n){return (n>=0?"+":"")+n.toFixed(1);}
+
+// ─── RENDER OPTION CHAIN ────────────────────────
+let maxCeOI=1, maxPeOI=1;
+
+function renderChain(){
+  const cfg   = INDEX_CONFIG[curIndex];
+  const data  = generateChain(curIndex);
+  chainData   = data.rows;
+  maxCeOI     = Math.max(...data.rows.map(r=>r.ce.oi));
+  maxPeOI     = Math.max(...data.rows.map(r=>r.pe.oi));
+
+  // Update spot
+  document.getElementById("spotPrice").textContent = "₹"+data.spot.toLocaleString("en-IN",{minimumFractionDigits:2});
+  const spotChgVal = data.spot - cfg.spot;
+  const sc = document.getElementById("spotChg");
+  sc.textContent = (spotChgVal>=0?"+":"")+spotChgVal.toFixed(2)+" ("+(spotChgVal/cfg.spot*100).toFixed(2)+"%)";
+  sc.className = "spot-chg "+(spotChgVal>=0?"spot-up":"spot-dn");
+  document.getElementById("atmStrike").textContent = data.atm.toLocaleString("en-IN");
+  document.getElementById("statusIndex").textContent = curIndex;
+  document.getElementById("strikesCount").textContent = data.rows.length;
+
+  // Update analytics
+  updateAnalytics(data);
+
+  // Render rows
+  const tbody = document.getElementById("chainBody");
+  tbody.innerHTML = data.rows.map(row=>{
+    const isATM = row.strike === data.atm;
+    const isCeITM = row.strike < data.atm;
+    const isPeITM = row.strike > data.atm;
+    let rowClass = "chain-row";
+    if(isATM) rowClass += " row-atm";
+    else if(isCeITM) rowClass += " row-call-itm";
+    else if(isPeITM) rowClass += " row-put-itm";
+
+    const ceBarW = Math.round(row.ce.oi/maxCeOI*100);
+    const peBarW = Math.round(row.pe.oi/maxPeOI*100);
+
+    const ceOicCls = row.ce.oiChg>=0?"oic-up":"oic-dn";
+    const peOicCls = row.pe.oiChg>=0?"oic-up":"oic-dn";
+
+    return`<div class="${rowClass}" onclick="rowClick(${row.strike})">
+      ${isATM?'<div class="row-atm-marker"></div>':""}
+
+      <!-- CE OI Change -->
+      <div class="cell sh-right">
+        <span class="oic-badge ${ceOicCls}">${fmtChg(row.ce.oiChg/1000)}K</span>
+      </div>
+      <!-- CE Total OI -->
+      <div class="cell sh-right">
+        <div class="oi-bar-wrap">
+          <div class="oi-bar-bg"><div class="oi-bar-fill oib-call" style="width:${ceBarW}%"></div></div>
+          <span class="oi-val" style="color:var(--text2)">${fmtOI(row.ce.oi)}</span>
+        </div>
+      </div>
+      <!-- CE Volume -->
+      <div class="cell sh-right"><span class="vol-val">${fmtOI(row.ce.vol)}</span></div>
+      <!-- CE IV -->
+      <div class="cell sh-right"><span class="cell-iv">${row.ce.iv}%</span></div>
+      <!-- CE LTP -->
+      <div class="cell sh-right"><span class="cell-ltp-call">₹${row.ce.ltp.toFixed(1)}</span></div>
+      <!-- CE Change -->
+      <div class="cell sh-right"><span class="${row.ce.chg>=0?"cell-chg-up":"cell-chg-dn"}">${fmtChg(row.ce.chg)}</span></div>
+
+      <!-- STRIKE -->
+      <div class="cell cell-strike ${isATM?"atm-strike-cell":""}">
+        ${row.strike.toLocaleString("en-IN")}
+        ${isATM?'<span style="font-size:9px;color:var(--amber);margin-left:3px">ATM</span>':""}
+      </div>
+
+      <!-- PE Change -->
+      <div class="cell cell-left"><span class="${row.pe.chg>=0?"cell-chg-up":"cell-chg-dn"}">${fmtChg(row.pe.chg)}</span></div>
+      <!-- PE LTP -->
+      <div class="cell cell-left"><span class="cell-ltp-put">₹${row.pe.ltp.toFixed(1)}</span></div>
+      <!-- PE IV -->
+      <div class="cell cell-left"><span class="cell-iv">${row.pe.iv}%</span></div>
+      <!-- PE Volume -->
+      <div class="cell cell-left"><span class="vol-val">${fmtOI(row.pe.vol)}</span></div>
+      <!-- PE Total OI -->
+      <div class="cell cell-left">
+        <div class="oi-bar-wrap">
+          <span class="oi-val" style="color:var(--text2)">${fmtOI(row.pe.oi)}</span>
+          <div class="oi-bar-bg"><div class="oi-bar-fill oib-put" style="width:${peBarW}%"></div></div>
+        </div>
+      </div>
+      <!-- PE OI Change -->
+      <div class="cell cell-left">
+        <span class="oic-badge ${peOicCls}">${fmtChg(row.pe.oiChg/1000)}K</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Scroll ATM row into center view
+  setTimeout(()=>{
+    const atmRow = tbody.querySelector(".row-atm");
+    if(atmRow){
+      const offset = atmRow.offsetTop - tbody.clientHeight/2 + atmRow.clientHeight/2;
+      tbody.scrollTop = Math.max(0, offset);
+    }
+  },100);
+
+  // OI bar charts
+  renderOICharts(data.rows, data.atm);
+  document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString("en-IN");
+}
+
+// ─── ANALYTICS UPDATE ────────────────────────────
+function updateAnalytics(data){
+  // PCR
+  const totalCeOI = data.rows.reduce((a,r)=>a+r.ce.oi,0);
+  const totalPeOI = data.rows.reduce((a,r)=>a+r.pe.oi,0);
+  const pcr = totalPeOI>0?(totalPeOI/totalCeOI):1;
+  document.getElementById("pcrValue").textContent = pcr.toFixed(2);
+  const pcrBadge = document.getElementById("pcrBadge");
+  const pcrBar   = document.getElementById("pcrBar");
+  if(pcr>1.3){
+    pcrBadge.textContent="Strongly Bullish";pcrBadge.className="acard-badge badge-bull";
+    pcrBar.style.background="linear-gradient(90deg,var(--put),var(--call))";
+    pcrBar.style.width=Math.min(90,pcr*40)+"%";
+  } else if(pcr>1){
+    pcrBadge.textContent="Bullish Cushion";pcrBadge.className="acard-badge badge-bull";
+    pcrBar.style.width=Math.min(80,pcr*38)+"%";
+  } else if(pcr>0.8){
+    pcrBadge.textContent="Neutral";pcrBadge.className="acard-badge badge-neutral";
+    pcrBar.style.width="50%";
+  } else {
+    pcrBadge.textContent="Bearish Grip";pcrBadge.className="acard-badge badge-bear";
+    pcrBar.style.width=Math.max(10,pcr*40)+"%";
+  }
+
+  // Total OI
+  document.getElementById("totalCallOI").textContent = fmtOI(totalCeOI);
+  document.getElementById("totalPutOI").textContent  = fmtOI(totalPeOI);
+
+  // Max Pain — strike with min loss for writers
+  let minPain=Infinity, maxPainStrike=data.atm;
+  data.rows.forEach(row=>{
+    let pain=0;
+    data.rows.forEach(r=>{
+      pain += Math.max(0, row.strike-r.strike)*r.ce.oi;
+      pain += Math.max(0, r.strike-row.strike)*r.pe.oi;
+    });
+    if(pain<minPain){minPain=pain;maxPainStrike=row.strike;}
+  });
+  document.getElementById("maxPainVal").textContent = maxPainStrike.toLocaleString("en-IN");
+  const nearby = [maxPainStrike-INDEX_CONFIG[curIndex].step, maxPainStrike, maxPainStrike+INDEX_CONFIG[curIndex].step];
+  document.getElementById("nearStrikes").innerHTML = nearby.map(s=>
+    `<span class="mp-strike">${s.toLocaleString("en-IN")}</span>`
+  ).join("");
+
+  // Momentum
+  const longBuild = data.rows.filter(r=>r.ce.oiChg>30000&&r.ce.chg>0).length;
+  const shortCover= data.rows.filter(r=>r.pe.oiChg<-20000).length;
+  const shortBuild= data.rows.filter(r=>r.pe.oiChg>40000&&r.pe.chg>0).length;
+  let momText = pcr>1.1?"Bullish":"Bearish";
+  document.getElementById("momIndex").textContent = momText+" Bias — PCR "+pcr.toFixed(2);
+  document.getElementById("momIndex").style.color = pcr>1?"var(--call)":"var(--put)";
+  const tags = [];
+  if(longBuild>2) tags.push(`<span class="mom-tag mom-long">▲ Long Buildup (${longBuild} strikes)</span>`);
+  if(shortCover>2) tags.push(`<span class="mom-tag mom-cover">↩ Short Covering (${shortCover} strikes)</span>`);
+  if(shortBuild>2) tags.push(`<span class="mom-tag mom-short">▼ Short Buildup (${shortBuild} strikes)</span>`);
+  if(!tags.length) tags.push(`<span class="mom-tag mom-cover">⚡ Consolidation</span>`);
+  document.getElementById("momTags").innerHTML = tags.join("");
+}
+
+// ─── OI BAR CHARTS ──────────────────────────────
+function renderOICharts(rows, atm){
+  // Top 8 strikes by OI
+  const ceTop = [...rows].sort((a,b)=>b.ce.oi-a.ce.oi).slice(0,8);
+  const peTop = [...rows].sort((a,b)=>b.pe.oi-a.pe.oi).slice(0,8);
+
+  const maxCe = Math.max(...ceTop.map(r=>r.ce.oi));
+  const maxPe = Math.max(...peTop.map(r=>r.pe.oi));
+
+  function renderBars(containerId, labelId, items, key, colorVar, maxVal){
+    const barsEl   = document.getElementById(containerId);
+    const labelsEl = document.getElementById(labelId);
+    barsEl.innerHTML   = items.map(r=>{
+      const h = Math.round(r[key].oi/maxVal*100);
+      const isATM = r.strike===atm;
+      return`<div class="oi-bar-col" style="height:${h}%;background:${isATM?"var(--amber)":colorVar};opacity:${isATM?1:.7};flex:1;border-radius:2px 2px 0 0"></div>`;
+    }).join("");
+    labelsEl.innerHTML = items.map(r=>{
+      const isATM = r.strike===atm;
+      return`<span style="flex:1;text-align:center;color:${isATM?"var(--amber)":"var(--text3)"};">${r.strike.toString().slice(-4)}</span>`;
+    }).join("");
+  }
+
+  renderBars("callOIBars","callOILabels",ceTop,"ce","var(--call)",maxCe);
+  renderBars("putOIBars", "putOILabels", peTop,"pe","var(--put)", maxPe);
+}
+
+// ─── ROW CLICK ──────────────────────────────────
+function rowClick(strike){
+  const symbol = `NSE:${curIndex}`;
+  const tvUrl  = `https://www.tradingview.com/chart/?symbol=${symbol}`;
+  // Show a quick popup with strike info
+  const row = chainData.find(r=>r.strike===strike);
+  if(!row) return;
+  const msg = `Strike: ${strike.toLocaleString("en-IN")}\n\nCALL (CE):\n  LTP: ₹${row.ce.ltp}  IV: ${row.ce.iv}%  OI: ${fmtOI(row.ce.oi)}\n\nPUT (PE):\n  LTP: ₹${row.pe.ltp}  IV: ${row.pe.iv}%  OI: ${fmtOI(row.pe.oi)}\n\nOpen TradingView for ${curIndex}?`;
+  if(confirm(msg)) window.open(tvUrl,"_blank");
+}
+
+// ─── CONTROLS ───────────────────────────────────
+function changeIndex(){
+  curIndex = document.getElementById("indexSel").value;
+  populateExpiries();
+  refreshAll();
+}
+function changeExpiry(){
+  curExpiry = document.getElementById("expirySel").value;
+  document.getElementById("chainExpLabel").textContent = "Expiry: "+curExpiry;
+  refreshAll();
+}
+function changeStrikesShown(delta){
+  strikesShown = Math.max(6, Math.min(30, strikesShown+delta));
+  refreshAll();
+}
+function refreshAll(){
+  renderChain();
+}
+
+// AUTO REFRESH
+function toggleAutoRefresh(){
+  autoOn = !autoOn;
+  const btn = document.getElementById("autoBtn");
+  if(autoOn){
+    btn.textContent = "⏱ Auto: ON";
+    btn.style.background="var(--green)";btn.style.borderColor="var(--green)";btn.style.color="#000";
+    autoRefreshTimer = setInterval(refreshAll, 5000);
+    showToast("Auto-refresh every 5s enabled");
+  } else {
+    btn.textContent = "⏱ Auto: OFF";
+    btn.style.background="";btn.style.borderColor="";btn.style.color="";
+    clearInterval(autoRefreshTimer);
+    showToast("Auto-refresh disabled");
+  }
+}
+
+// ─── CLOCK ──────────────────────────────────────
+function updateClock(){
+  const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  const h=ist.getHours(),m=ist.getMinutes(),wd=ist.getDay();
+  const open=wd>=1&&wd<=5&&(h>9||(h===9&&m>=15))&&(h<15||(h===15&&m<=30));
+  document.getElementById("ist").textContent = ist.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true})+" IST";
+  const lb = document.querySelector(".live-badge");
+  if(lb) lb.style.color = open?"var(--green)":"var(--text3)";
+}
+updateClock();setInterval(updateClock,1000);
+
+// ─── TOAST ──────────────────────────────────────
+let toastEl;
+function showToast(msg){
+  if(!toastEl){
+    toastEl=document.createElement("div");
+    toastEl.style.cssText="position:fixed;bottom:22px;right:22px;z-index:999;background:#21262d;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;font-size:13px;color:#e6edf3;transition:.25s;transform:translateY(60px);opacity:0;box-shadow:0 8px 28px rgba(0,0,0,.5)";
+    document.body.appendChild(toastEl);
+  }
+  toastEl.textContent=msg;
+  toastEl.style.transform="translateY(0)";toastEl.style.opacity="1";
+  clearTimeout(toastEl._t);
+  toastEl._t=setTimeout(()=>{toastEl.style.transform="translateY(60px)";toastEl.style.opacity="0";},3000);
+}
+
+// ─── INIT ────────────────────────────────────────
+populateExpiries();
+setTimeout(renderChain, 200);
+</script>
+</body>
+</html>
