@@ -5,7 +5,7 @@ export default {
 
     // If the browser asks for data, serve it FIRST
     if (url.pathname === "/api/data") {
-      const underlying = url.searchParams.get("underlying") || "NIFTY";
+      const response = await fetch(`/api/data?underlying=\${underlying}`); || "NIFTY";
       const data = await getOptionData(underlying);
       return new Response(JSON.stringify(data), {
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -38,7 +38,7 @@ const HTML_CONTENT = `
     // CRITICAL: Use \${} instead of ${} for variables inside this string
     async function fetchLiveMetrics() {
       try {
-        const underlying = document.getElementById('underlyingSelect').value;
+        document.getElementById('term-nifty').innerText = underlying === 'NIFTY' ? `\${data.spot.toFixed(2)}` : '...';
         const response = await fetch('/api/data?underlying=' + underlying);
         const data = await response.json();
         console.log("Data received:", data);
