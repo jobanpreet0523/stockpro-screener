@@ -1,382 +1,364 @@
-// index.js - StockPro Terminal Command Interpreter
+// live-data.js - StockPro Terminal State Engine & Derivatives Calculator
 
-(function() {
-  console.log("StockPro Bloomberg Terminal Command Layer Online.");
+const CONFIG = {
+  updateIntervalMs: 6000 // Refresh live data every 6 seconds
+};
 
-  let activeTicker = "RELIANCE.NS";
-  let refreshController = null;
-  let isDaemonRefreshing = false;
+// Global application state
+window.terminalState = {
+  activeUnderlying: "NIFTY", // NIFTY or BANKNIFTY
+  activeOutlook: "BULLISH",  // BULLISH, BEARISH, VOLATILITY, or SIDEWAYS
+  spotPrice: 24892.50,
+  payoffChart: null
+};
 
-  // Terminal commands map
-  const COMMANDS = {
-    "DES": "Description / Equity Fundamentals",
-    "OMN": "Options Monitor / Derivatives",
-    "PORT": "Algorithmic Portfolio Viewer",
-    "HELP": "Terminal Help Directory"
-  };
-
-  /**
-   * Parses terminal commands (e.g. "TCS DES <GO>", "NIFTY OMN <GO>", "PORT <GO>")
-   */
-  function parseTerminalCommand(inputString) {
-    let clean = inputString.trim().toUpperCase();
-    
-    // Check for help command
-    if (clean === "HELP" || clean === "HELP <GO>" || clean === "HELP GO") {
-      return { command: "HELP", symbol: null };
-    }
-    
-    // Check for portfolio command
-    if (clean === "PORT" || clean === "PORT <GO>" || clean === "PORT GO") {
-      return { command: "PORT", symbol: null };
-    }
-
-    // Strip out "<GO>" or "GO" strings
-    clean = clean.replace(/<GO>/g, "").replace(/GO/g, "").trim();
-
-    const parts = clean.split(/\s+/);
-    if (parts.length === 1) {
-      // Default to Description if only symbol entered
-      return { command: "DES", symbol: parts[0] };
-    }
-
-    const symbol = parts[0];
-    const cmd = parts[1];
-
-    if (COMMANDS[cmd]) {
-      return { command: cmd, symbol: symbol };
-    }
-
-    return { command: "DES", symbol: symbol };
-  }
-
-  function cleanAndNormalizeTicker(symbol) {
-    if (!symbol) return "";
-    let clean = symbol.trim().toUpperCase();
-    if (!clean.endsWith('.NS') && !clean.includes('^')) {
-      clean += '.NS';
-    }
-    return clean;
-  }
-
-  function getActiveTickerInput() {
-    const inputEl = document.querySelector('#tickerInput');
-    if (inputEl && inputEl.value.trim()) {
-      const parsed = parseTerminalCommand(inputEl.value);
-      if (parsed.symbol) {
-        return cleanAndNormalizeTicker(parsed.symbol);
-      }
-    }
-    return activeTicker;
-  }
-
-  /**
-   * Executes Bloomberg-style terminal commands
-   */
-  async function executeTerminalSearch() {
-    const inputEl = document.querySelector('#tickerInput');
-    if (!inputEl) return;
-
-    const query = inputEl.value.trim();
-    if (!query) return;
-
-    const parsed = parseTerminalCommand(query);
-    showTerminalLoadingState();
-
-    if (parsed.command === "HELP") {
-      showHelpOverlay();
-      return;
-    }
-
-    if (parsed.command === "PORT") {
-      await fetchAlgorithmicPortfolios();
-      return;
-    }
-
-    if (parsed.command === "OMN") {
-      let indexName = parsed.symbol || "NIFTY";
-      if (indexName === "NIFTY.NS") indexName = "NIFTY";
-      if (indexName === "BANKNIFTY.NS") indexName = "BANKNIFTY";
-      await fetchDerivativesOptionChain(indexName);
-      return;
-    }
-
-    if (parsed.command === "DES") {
-      const symbol = cleanAndNormalizeTicker(parsed.symbol);
-      await fetchEquityFundamentals(symbol);
-    }
-  }
-
-  // --- CORE TELEMETRY OPERATIONS ---
-
-  async function fetchEquityFundamentals(symbol) {
-    try {
-      const res = await fetch(`/api/pro-data?symbol=${encodeURIComponent(symbol)}`);
-      const data = await res.json();
-      if (data && !data.error) {
-        updateFundamentalsUI(data);
-        // Switch view to Fundamentals layout if tabs exist
-        activateTab('fundamentals-tab');
-      }
-    } catch (e) {
-      console.error("Terminal failed to fetch Equity description:", e);
-    }
-  }
-
-  async function fetchDerivativesOptionChain(underlying) {
-    try {
-      const res = await fetch(`/api/data?underlying=${encodeURIComponent(underlying)}`);
-      const data = await res.json();
-      if (data && !data.error) {
-        // Render spot values and option matrix
-        if (window.MarketStream) {
-          window.MarketStream.init(); // Update indices fallback
-        }
-        activateTab('derivatives-tab');
-      }
-    } catch (e) {
-      console.error("Terminal failed to fetch Option Monitor data:", e);
-    }
-  }
-
-  async function fetchAlgorithmicPortfolios() {
-    try {
-      const res = await fetch('/api/propicks');
-      const data = await res.json();
-      if (data && data.portfolios) {
-        renderPortfoliosUI(data.portfolios);
-        activateTab('portfolios-tab');
-      }
-    } catch (e) {
-      console.error("Terminal failed to fetch Portfolio assets:", e);
-    }
-  }
-
-  // --- INTERFACE RENDERING ENGINE ---
-
-  function showTerminalLoadingState() {
-    const healthVal = document.querySelector('#health-score-val') || document.querySelector('#health-score');
-    if (healthVal) {
-      healthVal.innerHTML = "<span class='animate-pulse text-yellow-500'>SYS LOAD...</span>";
-    }
-  }
-
-  function updateFundamentalsUI(data) {
-    if (!data || data.error) return;
-    activeTicker = data.symbol;
-
-    // Company Headers
-    const titleElements = Array.from(document.querySelectorAll('h1, h2, h3, p')).filter(el => 
-      el.id === 'company-name' || el.textContent.includes("Reliance") || el.textContent.includes("TCS") || el.textContent.includes("Infosys")
-    );
-    titleElements.forEach(el => {
-      if (el.children.length === 0 || el.id === 'company-name') {
-        el.textContent = data.companyName + " [" + data.symbol + "]";
-      }
-    });
-
-    // Asset Spot Pricing
-    const priceElements = Array.from(document.querySelectorAll('*')).filter(el => 
-      el.id === 'current-price' || (el.children.length === 0 && el.textContent.trim().startsWith('₹'))
-    );
-    priceElements.forEach(el => {
-      el.textContent = "₹" + parseFloat(data.price).toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    });
-
-    // Fair Value
-    const fairValueEl = document.querySelector('#fair-value') || Array.from(document.querySelectorAll('*')).find(el => el.textContent.includes('Fair Value') || el.id === 'fair-val-container');
-    if (fairValueEl) {
-      const targetSpan = fairValueEl.querySelector('span, p') || fairValueEl;
-      if (targetSpan) targetSpan.textContent = "₹" + parseFloat(data.fairValue).toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    }
-
-    // Upside Potential
-    const upsideEl = document.querySelector('#upside-potential') || Array.from(document.querySelectorAll('*')).find(el => el.textContent.includes('Upside') || el.id === 'upside-container');
-    if (upsideEl) {
-      const valueSpan = upsideEl.querySelector('span, p') || upsideEl;
-      if (valueSpan) {
-        valueSpan.textContent = "+" + parseFloat(data.upsidePercent).toFixed(1) + "%";
-        valueSpan.className = "text-green-500 font-bold text-lg";
-      }
-    }
-
-    // Health score
-    const healthEl = document.querySelector('#health-score-val') || document.querySelector('#health-score');
-    if (healthEl) {
-      const rating = healthEl.querySelector('span, p') || healthEl;
-      if (rating) {
-        rating.textContent = data.healthScore + " / 5.0";
-        rating.style.color = data.healthScore >= 4.3 ? '#10B981' : (data.healthScore >= 3.8 ? '#F59E0B' : '#EF4444');
-      }
-    }
-
-    // Operating Margins
-    const marginsContainer = document.querySelector('#operating-margins') || document.querySelector('#margins-container');
-    if (marginsContainer) {
-      marginsContainer.innerHTML = '';
-      data.operatingMargins.forEach(m => {
-        const row = document.createElement('div');
-        row.className = "flex justify-between py-2 text-sm text-gray-300 border-b border-gray-800";
-        row.innerHTML = "<span>FY " + m.year + " Margin</span><span class='font-semibold text-green-400'>" + m.margin.toFixed(1) + "%</span>";
-        marginsContainer.appendChild(row);
-      });
-    }
-
-    // Multi-Year Operating Statement
-    const tableBody = document.querySelector('#financials-table-body') || document.querySelector('#financials-tbody') || document.querySelector('table tbody');
-    if (tableBody) {
-      tableBody.innerHTML = '';
-      data.statements.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.className = "border-b border-gray-800 hover:bg-gray-900 transition text-sm";
-        tr.innerHTML = `
-          <td class="px-4 py-3 font-semibold text-gray-200">${row.year}</td>
-          <td class="px-4 py-3 text-right text-gray-300">₹${(row.revenue / 1e9).toFixed(2)}B</td>
-          <td class="px-4 py-3 text-right text-green-400">₹${(row.netIncome / 1e9).toFixed(2)}B</td>
-          <td class="px-4 py-3 text-right text-gray-300">₹${(row.assets / 1e9).toFixed(2)}B</td>
-          <td class="px-4 py-3 text-right text-red-400">₹${(row.liabilities / 1e9).toFixed(2)}B</td>
-          <td class="px-4 py-3 text-right text-blue-400">₹${(row.fcf / 1e9).toFixed(2)}B</td>
-        `;
-        tableBody.appendChild(tr);
-      });
-    }
-  }
-
-  function renderPortfoliosUI(portfolios) {
-    const container = document.querySelector('#portfolios-container') || document.querySelector('#heatmap-container') || document.body;
-    if (!container) return;
-
-    // Clear and build terminal portfolio workspace
-    container.innerHTML = `
-      <div class="col-span-full space-y-6">
-        <h2 class="text-xl font-bold text-yellow-500 border-b border-gray-800 pb-2">ACTIVE ALGORITHMIC PORTFOLIOS [PORT]</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          \${portfolios.map(p => \`
-            <div class="bg-black border border-gray-800 p-5 rounded space-y-4">
-              <div class="flex justify-between items-center">
-                <span class="text-xs bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded font-bold">\${p.type}</span>
-                <span class="text-sm font-semibold text-green-400">Ann. Return: +\${p.annualizedReturn}%</span>
-              </div>
-              <h3 class="text-lg font-bold text-gray-100">\${p.name}</h3>
-              <p class="text-xs text-gray-400">\${p.description}</p>
-              <div class="space-y-2 border-t border-gray-900 pt-3">
-                <h4 class="text-xs font-bold text-gray-300">Active Allocations</h4>
-                \${p.activeHoldings.map(h => \`
-                  <div class="flex justify-between text-xs text-gray-400">
-                    <span>\${h.symbol} (\${h.allocation})</span>
-                    <span class="font-bold text-gray-200">\${h.weight}%</span>
-                  </div>
-                \`).join('')}
-              </div>
-            </div>
-          \`).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  function showHelpOverlay() {
-    const existing = document.getElementById('terminal-help-modal');
-    if (existing) return;
-
-    const modal = document.createElement('div');
-    modal.id = 'terminal-help-modal';
-    modal.className = "fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-50 font-mono";
-    modal.innerHTML = `
-      <div class="bg-black border border-yellow-500 p-6 max-w-lg w-full space-y-4 text-green-400">
-        <div class="flex justify-between items-center border-b border-gray-800 pb-2">
-          <h3 class="text-lg font-bold text-yellow-500">STOCKPRO TERMINAL DIRECTORY</h3>
-          <button id="close-help-btn" class="text-gray-500 hover:text-white">&times;</button>
-        </div>
-        <div class="space-y-2 text-xs">
-          <p class="text-white font-semibold">Supported Keyboard Command Sequences:</p>
-          <div class="grid grid-cols-2 gap-2 border-b border-gray-900 pb-2 my-2">
-            <div>TCS DES &lt;GO&gt;</div><div>Load detailed fundamentals</div>
-            <div>NIFTY OMN &lt;GO&gt;</div><div>Load index options monitor</div>
-            <div>PORT &lt;GO&gt;</div><div>Load algorithm portfolio models</div>
-            <div>HELP &lt;GO&gt;</div><div>Display this directory</div>
-          </div>
-          <p class="text-gray-400">Use standard tickers for the NSE (e.g. RELIANCE, TCS, INFY).</p>
-        </div>
-        <button id="close-help-btn-bottom" class="w-full bg-yellow-500 text-black py-2 rounded text-xs font-bold font-sans">CLOSE WINDOW</button>
-      </div>
-    `;
-    document.body.appendChild(modal);
-
-    const close = () => modal.remove();
-    document.getElementById('close-help-btn').onclick = close;
-    document.getElementById('close-help-btn-bottom').onclick = close;
-  }
-
-  // --- SYSTEM DAEMON & TAB CONTROLLER ---
-
-  function activateTab(tabId) {
-    const tabBtn = document.getElementById(tabId) || document.querySelector(\`[data-tab="\${tabId}"]\`);
-    if (tabBtn) {
-      tabBtn.click();
-    }
-  }
-
-  window.fetchLiveMetrics = async function() {
-    if (isDaemonRefreshing) return;
-    if (document.hidden) return;
-
-    if (refreshController) refreshController.abort();
-    refreshController = new AbortController();
-    isDaemonRefreshing = true;
-
-    const currentSymbol = getActiveTickerInput();
-
-    try {
-      const response = await fetch('/api/pro-data?symbol=' + encodeURIComponent(currentSymbol), {
-        signal: refreshController.signal
-      });
-      const data = await response.json();
-      if (data && !data.error) {
-        updateFundamentalsUI(data);
-      }
-    } catch (e) {
-      if (e.name !== 'AbortError') {
-        console.error("Auto-Refresh Background Loop Error:", e);
-      }
-    } finally {
-      isDaemonRefreshing = false;
-    }
-  };
-
-  function setupDOMBindings() {
-    const inputEl = document.querySelector('#tickerInput');
-    const buttonEl = document.querySelector('#searchButton') || Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.includes('Search') || btn.onclick?.toString().includes('fetchProStock'));
-
-    if (inputEl) {
-      // Set initial watermark placeholder to mimic Bloomberg
-      inputEl.placeholder = "Enter command (e.g., TCS DES <GO> or PORT <GO>)...";
+// Options Strategy mathematical algorithms
+const STRATEGIES = {
+  BULLISH: {
+    name: "Bull Call Spread",
+    desc: "Buy ATM Call, Sell OTM Call. Limits risk while maximizing returns on moderate upside.",
+    calc: (spot) => {
+      const strikeWidth = window.terminalState.activeUnderlying === "BANKNIFTY" ? 200 : 100;
+      const atm = Math.round(spot / (strikeWidth / 2)) * (strikeWidth / 2);
+      const otm = atm + strikeWidth;
+      const atmPrem = spot * 0.125 * 0.05;
+      const otmPrem = spot * 0.125 * 0.02;
+      const netDebit = atmPrem - otmPrem;
       
-      inputEl.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          executeTerminalSearch();
+      const maxLoss = Math.round(netDebit * 75);
+      const maxProfit = Math.round((strikeWidth - netDebit) * 75);
+      const breakeven = atm + netDebit;
+      return { name: "Bull Call Spread", desc: `Buy ATM Call (${atm}), Sell OTM Call (${otm})`, maxProfit: `₹${maxProfit.toLocaleString('en-IN')}`, maxLoss: `₹${maxLoss.toLocaleString('en-IN')}`, winProb: 62, breakeven: Math.round(breakeven) };
+    },
+    generatePLPoints: (spot) => {
+      const strikeWidth = window.terminalState.activeUnderlying === "BANKNIFTY" ? 200 : 100;
+      const atm = Math.round(spot / (strikeWidth / 2)) * (strikeWidth / 2);
+      const atmPrem = spot * 0.125 * 0.05;
+      const otmPrem = spot * 0.125 * 0.02;
+      const netDebit = atmPrem - otmPrem;
+      
+      const range = [];
+      const pl = [];
+      for (let i = -4; i <= 4; i++) {
+        const xPrice = atm + (i * (strikeWidth / 2));
+        range.push(xPrice.toString());
+        // P&L calculation at expiry
+        let profit = Math.max(0, xPrice - atm) - Math.max(0, xPrice - (atm + strikeWidth)) - netDebit;
+        pl.push(Math.round(profit * 75));
+      }
+      return { range, pl };
+    }
+  },
+  BEARISH: {
+    name: "Bear Put Spread",
+    desc: "Buy ATM Put, Sell OTM Put. Restricts risk while optimizing returns on moderate downside.",
+    calc: (spot) => {
+      const strikeWidth = window.terminalState.activeUnderlying === "BANKNIFTY" ? 200 : 100;
+      const atm = Math.round(spot / (strikeWidth / 2)) * (strikeWidth / 2);
+      const otm = atm - strikeWidth;
+      const atmPrem = spot * 0.125 * 0.052;
+      const otmPrem = spot * 0.125 * 0.021;
+      const netDebit = atmPrem - otmPrem;
+      
+      const maxLoss = Math.round(netDebit * 75);
+      const maxProfit = Math.round((strikeWidth - netDebit) * 75);
+      const breakeven = atm - netDebit;
+      return { name: "Bear Put Spread", desc: `Buy ATM Put (${atm}), Sell OTM Put (${otm})`, maxProfit: `₹${maxProfit.toLocaleString('en-IN')}`, maxLoss: `₹${maxLoss.toLocaleString('en-IN')}`, winProb: 58, breakeven: Math.round(breakeven) };
+    },
+    generatePLPoints: (spot) => {
+      const strikeWidth = window.terminalState.activeUnderlying === "BANKNIFTY" ? 200 : 100;
+      const atm = Math.round(spot / (strikeWidth / 2)) * (strikeWidth / 2);
+      const atmPrem = spot * 0.125 * 0.052;
+      const otmPrem = spot * 0.125 * 0.021;
+      const netDebit = atmPrem - otmPrem;
+      
+      const range = [];
+      const pl = [];
+      for (let i = -4; i <= 4; i++) {
+        const xPrice = atm + (i * (strikeWidth / 2));
+        range.push(xPrice.toString());
+        let profit = Math.max(0, atm - xPrice) - Math.max(0, (atm - strikeWidth) - xPrice) - netDebit;
+        pl.push(Math.round(profit * 75));
+      }
+      return { range, pl };
+    }
+  },
+  VOLATILITY: {
+    name: "Long Straddle",
+    desc: "Buy ATM Call and ATM Put. Captures unlimited upside on sharp breakouts in either direction.",
+    calc: (spot) => {
+      const strikeWidth = window.terminalState.activeUnderlying === "BANKNIFTY" ? 200 : 100;
+      const atm = Math.round(spot / (strikeWidth / 2)) * (strikeWidth / 2);
+      const callPrem = spot * 0.125 * 0.05;
+      const putPrem = spot * 0.125 * 0.052;
+      const totalCost = callPrem + putPrem;
+      
+      const maxLoss = Math.round(totalCost * 75);
+      return { name: "Long Straddle", desc: `Buy ATM Call & Put (${atm})`, maxProfit: "Unlimited", maxLoss: `₹${maxLoss.toLocaleString('en-IN')}`, winProb: 44, breakeven: Math.round(atm + totalCost) };
+    },
+    generatePLPoints: (spot) => {
+      const strikeWidth = window.terminalState.activeUnderlying === "BANKNIFTY" ? 200 : 100;
+      const atm = Math.round(spot / (strikeWidth / 2)) * (strikeWidth / 2);
+      const callPrem = spot * 0.125 * 0.05;
+      const putPrem = spot * 0.125 * 0.052;
+      const totalCost = callPrem + putPrem;
+      
+      const range = [];
+      const pl = [];
+      for (let i = -4; i <= 4; i++) {
+        const xPrice = atm + (i * (strikeWidth / 2));
+        range.push(xPrice.toString());
+        let profit = Math.max(0, xPrice - atm) + Math.max(0, atm - xPrice) - totalCost;
+        pl.push(Math.round(profit * 75));
+      }
+      return { range, pl };
+    }
+  },
+  SIDEWAYS: {
+    name: "Iron Condor",
+    desc: "Sell OTM Put/Call, Buy OTM Protection. Ideal for collecting premiums in consolidations.",
+    calc: (spot) => {
+      const strikeWidth = window.terminalState.activeUnderlying === "BANKNIFTY" ? 200 : 100;
+      const atm = Math.round(spot / (strikeWidth / 2)) * (strikeWidth / 2);
+      const spread = strikeWidth;
+      const credit = spot * 0.125 * 0.04;
+      const maxLoss = Math.round((spread - credit) * 75);
+      
+      return { name: "Iron Condor", desc: `OTM Wing Spreads centered around ${atm}`, maxProfit: `₹${Math.round(credit * 75).toLocaleString('en-IN')}`, maxLoss: `₹${maxLoss.toLocaleString('en-IN')}`, winProb: 72, breakeven: atm + spread };
+    },
+    generatePLPoints: (spot) => {
+      const strikeWidth = window.terminalState.activeUnderlying === "BANKNIFTY" ? 200 : 100;
+      const atm = Math.round(spot / (strikeWidth / 2)) * (strikeWidth / 2);
+      const credit = spot * 0.125 * 0.04;
+      
+      const range = [];
+      const pl = [];
+      for (let i = -4; i <= 4; i++) {
+        const xPrice = atm + (i * (strikeWidth / 2));
+        range.push(xPrice.toString());
+        let profit = credit;
+        if (xPrice > atm + strikeWidth) {
+          profit = credit - (xPrice - (atm + strikeWidth));
+        } else if (xPrice < atm - strikeWidth) {
+          profit = credit - ((atm - strikeWidth) - xPrice);
         }
-      });
+        pl.push(Math.round(Math.max(credit - strikeWidth, profit) * 75));
+      }
+      return { range, pl };
     }
+  }
+};
 
-    if (buttonEl) {
-      buttonEl.addEventListener('click', function(e) {
-        e.preventDefault();
-        executeTerminalSearch();
-      });
-    }
+/**
+ * Main application coordinator
+ */
+async function syncGlobalTerminalWorkspace() {
+  const symbol = window.terminalState.activeUnderlying;
+  
+  try {
+    const res = await fetch(`/api/data?underlying=${symbol}`);
+    const data = await res.json();
+    if (data && !data.error) {
+      window.terminalState.spotPrice = data.spotPrice;
+      
+      // 1. Update spot rates
+      updateSpotRatesUI(data);
 
-    if (window.metricsIntervalId) {
-      clearInterval(window.metricsIntervalId);
+      // 2. Render Option Chain near spot
+      renderOptionChainMatrix(data.options, data.spotPrice);
+
+      // 3. Recalculate and redraw Payoff Chart
+      rebuildBlueprintAndChart();
     }
-    window.metricsIntervalId = setInterval(window.fetchLiveMetrics, 12000);
-    window.fetchLiveMetrics();
+  } catch (error) {
+    console.error("Live Workspace sync error:", error);
+  }
+}
+
+function updateSpotRatesUI(data) {
+  const formattedPrice = data.spotPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+  const formattedChange = `${data.pcr >= 1 ? '+' : '-'}${data.pcr}%`;
+  
+  if (data.underlying === "NIFTY") {
+    const el = document.getElementById('nifty-price');
+    if (el) el.textContent = formattedPrice;
+  } else if (data.underlying === "BANKNIFTY") {
+    const el = document.getElementById('banknifty-price');
+    if (el) el.textContent = formattedPrice;
+  }
+}
+
+/**
+ * Builds the live execution matrix around active spot strike prices
+ */
+function renderOptionChainMatrix(options, spot) {
+  const tbody = document.getElementById('option-chain-tbody') || document.querySelector('table tbody');
+  if (!tbody) return;
+
+  // Clear static notebook rows
+  tbody.innerHTML = '';
+
+  // Show the 7 strikes nearest to spot price
+  const nearest = options.filter(opt => Math.abs(opt.strike - spot) < 250).slice(0, 7);
+
+  nearest.forEach(opt => {
+    const isATM = Math.abs(opt.strike - spot) < 30;
+    const tr = document.createElement('tr');
+    tr.className = `border-b border-gray-900 text-sm hover:bg-gray-900/60 transition ${isATM ? 'bg-blue-500/10' : ''}`;
+
+    tr.innerHTML = `
+      <td class="px-6 py-3 text-right text-red-400 font-mono">${(opt.ce.oi / 100000).toFixed(1)}L</td>
+      <td class="px-6 py-3 text-right font-mono">${opt.ce.ltp.toFixed(2)}</td>
+      <td class="px-6 py-3 text-center bg-gray-900/40 font-bold text-yellow-500 border-l border-r border-gray-800 font-mono">${opt.strike}</td>
+      <td class="px-6 py-3 text-left font-mono">${opt.pe.ltp.toFixed(2)}</td>
+      <td class="px-6 py-3 text-left text-green-400 font-mono">${(opt.pe.oi / 100000).toFixed(1)}L</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/**
+ * Recalculates risk parameters and redraws the payoff Chart
+ */
+function rebuildBlueprintAndChart() {
+  const outlook = window.terminalState.activeOutlook;
+  const spot = window.terminalState.spotPrice;
+  const strategy = STRATEGIES[outlook];
+  
+  if (!strategy) return;
+  const model = strategy.calc(spot);
+
+  // Update strategy details in HTML dynamically
+  updateStrategyHTML(model);
+
+  // Rebuild the payoff chart canvas dynamically
+  const payload = strategy.generatePLPoints(spot);
+  renderPayoffChart(payload.range, payload.pl);
+}
+
+function updateStrategyHTML(model) {
+  // Safe selector search
+  const blueprintSec = document.getElementById('blueprint');
+  if (!blueprintSec) return;
+
+  const titleEl = blueprintSec.querySelector('h3');
+  const descEl = blueprintSec.querySelector('p');
+  
+  if (titleEl) titleEl.textContent = model.name;
+  if (descEl) descEl.textContent = model.desc;
+
+  // Search details grid
+  const childTexts = Array.from(blueprintSec.querySelectorAll('div'));
+  
+  const profitEl = childTexts.find(el => el.textContent.includes('Max Profit') || el.id === 'max-profit-val');
+  const lossEl = childTexts.find(el => el.textContent.includes('Max Loss') || el.id === 'max-loss-val');
+  const bvenEl = childTexts.find(el => el.textContent.includes('Breakeven') || el.id === 'breakeven-val');
+  const winEl = childTexts.find(el => el.textContent.includes('Win Probability') || el.id === 'win-val');
+
+  if (profitEl) {
+    const val = profitEl.querySelector('div') || profitEl;
+    if (val) val.textContent = model.maxProfit;
+  }
+  if (lossEl) {
+    const val = lossEl.querySelector('div') || lossEl;
+    if (val) val.textContent = model.maxLoss;
+  }
+  if (bvenEl) {
+    const val = bvenEl.querySelector('div') || bvenEl;
+    if (val) val.textContent = model.breakeven.toLocaleString('en-IN');
+  }
+  if (winEl) {
+    const val = winEl.querySelector('div') || winEl;
+    if (val) val.textContent = `${model.winProb}%`;
+  }
+}
+
+function renderPayoffChart(labels, dataset) {
+  const ctx = document.getElementById('payoff-chart');
+  if (!ctx) return;
+
+  if (window.terminalState.payoffChart) {
+    window.terminalState.payoffChart.destroy(); // Clear old instance
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupDOMBindings);
-  } else {
-    setupDOMBindings();
+  window.terminalState.payoffChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Expiry P&L (INR)',
+        data: dataset,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: 'rgba(148, 163, 184, 0.08)' } }
+      }
+    }
+  });
+}
+
+function setupInteractiveBinds() {
+  // 1. Outlook strategy buttons click handling
+  const blueprintSec = document.getElementById('blueprint');
+  if (blueprintSec) {
+    const buttons = blueprintSec.querySelectorAll('button');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Toggle selected styling
+        buttons.forEach(b => {
+          b.className = "bg-gray-900 border border-gray-800 text-gray-400 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-gray-800 transition";
+        });
+        btn.className = "bg-blue-600/10 text-blue-400 border border-blue-500/20 px-4 py-2 rounded-lg text-xs font-semibold";
+        
+        // Update active state and recalculate
+        const text = btn.textContent.trim().toUpperCase();
+        if (text === "BULLISH") window.terminalState.activeOutlook = "BULLISH";
+        if (text === "BEARISH") window.terminalState.activeOutlook = "BEARISH";
+        if (text === "HIGH VOLATILITY") window.terminalState.activeOutlook = "VOLATILITY";
+        if (text === "SIDEWAYS") window.terminalState.activeOutlook = "SIDEWAYS";
+
+        rebuildBlueprintAndChart();
+      });
+    });
   }
-})();
+
+  // 2. Navigation click binding (click index card to switch tables)
+  const niftyCard = document.getElementById('nifty-price')?.closest('div');
+  const bankniftyCard = document.getElementById('banknifty-price')?.closest('div');
+
+  if (niftyCard) {
+    niftyCard.style.cursor = "pointer";
+    niftyCard.addEventListener('click', () => {
+      window.terminalState.activeUnderlying = "NIFTY";
+      syncGlobalTerminalWorkspace();
+    });
+  }
+  if (bankniftyCard) {
+    bankniftyCard.style.cursor = "pointer";
+    bankniftyCard.addEventListener('click', () => {
+      window.terminalState.activeUnderlying = "BANKNIFTY";
+      syncGlobalTerminalWorkspace();
+    });
+  }
+}
+
+// Start Stream
+function init() {
+  setupInteractiveBinds();
+  syncGlobalTerminalWorkspace();
+  setInterval(syncGlobalTerminalWorkspace, CONFIG.updateIntervalMs);
+}
+
+window.MarketStream = {
+  init
+};
