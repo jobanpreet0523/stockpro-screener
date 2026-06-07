@@ -1,0 +1,12 @@
+{
+  "name": "stockpro-screener",
+  "version": "1.0.0",
+  "description": "StockPro Screener Real-Time Analytics Platform",
+  "main": "_worker.js",
+  "devDependencies": {
+    "wrangler": "^3.91.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy"
+  }
+}
