@@ -1,53 +1,65 @@
-// 1. ROUTER LOGIC
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
+// index.js
 
-    // If the browser asks for data, serve it FIRST
-    if (url.pathname === "/api/data") {
-      const response = await fetch(`/api/data?underlying=\${underlying}`); || "NIFTY";
-      const data = await getOptionData(underlying);
-      return new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-      });
-    }
-
-    // Otherwise, serve your HTML
-    return new Response(HTML_CONTENT, {
-      headers: { "Content-Type": "text/html;charset=UTF-8" }
-    });
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize real-time streams
+  if (window.MarketStream) {
+    window.MarketStream.init();
   }
-};
 
-// 2. YOUR HELPER FUNCTIONS (Place them here)
-async function getOptionData(underlying) {
-    // ... keep all your existing logic here ...
-    return { status: "success", underlying }; 
-}
+  // Bind main CTA buttons to your existing pages without breaking UI styling
+  bindNavigationElements();
 
-// 3. THE HTML CONTENT
-const HTML_CONTENT = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <!-- Keep all your CSS/Head tags here -->
-</head>
-<body>
-  <!-- Your Body Content -->
-  <script>
-    // CRITICAL: Use \${} instead of ${} for variables inside this string
-    async function fetchLiveMetrics() {
-      try {
-        document.getElementById('term-nifty').innerText = underlying === 'NIFTY' ? `\${data.spot.toFixed(2)}` : '...';
-        const response = await fetch('/api/data?underlying=' + underlying);
-        const data = await response.json();
-        console.log("Data received:", data);
-        // Update your UI here
-      } catch (err) {
-        console.error("Fetch failed", err);
+  // Bind the search functionality for indices and derivatives
+  setupSearchEngine();
+});
+
+/**
+ * Safe search logic mapping input keywords to subpages or filters
+ */
+function setupSearchEngine() {
+  const searchInput = document.querySelector('input[placeholder*="Search"]');
+  if (!searchInput) return;
+
+  searchInput.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+      const query = searchInput.value.trim().toUpperCase();
+      if (!query) return;
+
+      console.log(`Searching for: ${query}`);
+      
+      // Route user to fo.html or dashboard.html with active query parameter
+      if (query.includes('NIFTY') || query.includes('BANKNIFTY')) {
+        window.location.href = `./dashboard.html?symbol=${encodeURIComponent(query)}`;
+      } else {
+        window.location.href = `./fo.html?search=${encodeURIComponent(query)}`;
       }
     }
-  </script>
-</body>
-</html>
-`;
+  });
+}
+
+/**
+ * Handles navigation redirects across existing HTML files
+ */
+function bindNavigationElements() {
+  // Access Pro Terminal redirect
+  const terminalBtn = Array.from(document.querySelectorAll('button, a')).find(el => 
+    el.textContent.trim().includes('Access Pro Terminal')
+  );
+  if (terminalBtn) {
+    terminalBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = './dashboard.html';
+    });
+  }
+
+  // Request a Demo redirect
+  const demoBtn = Array.from(document.querySelectorAll('button, a')).find(el => 
+    el.textContent.trim().includes('Request a Demo')
+  );
+  if (demoBtn) {
+    demoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = './fo.html';
+    });
+  }
+}
