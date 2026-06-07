@@ -716,7 +716,12 @@ const HTML_CONTENT = `
     // Trigger Initial Live Loop
     fetchLiveMetrics();
     setInterval(fetchLiveMetrics, 3000);
-  </script>
+  <script>
+ // This function will update your UI with live data
+ async function fetchMarketData() { ... }
+ ...
+ fetchMarketData();
+</script>
 </body>
 </html>
 `;
