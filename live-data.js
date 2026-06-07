@@ -1,32 +1,238 @@
 // live-data.js
 
-// Configuration: Insert your live API keys here
+// Configuration
 const CONFIG = {
-  // Option A: RapidAPI (Yahoo Finance API) for live indices
-  rapidApiKey: 'YOUR_RAPID_API_KEY', // Get a free key from rapidapi.com/apidojo/api/yh-finance
-  rapidApiHost: 'yh-finance.p.rapidapi.com',
-  
-  // Option B: If you're using broker APIs like Shoonya / Angel One / Upstox for live options
-  brokerApiKey: 'YOUR_BROKER_API_KEY',
-  
-  updateIntervalMs: 5000 // Refresh data every 5 seconds
+  updateIntervalMs: 5000 // Refresh all index quotes, heatmap, and option chain every 5 seconds
 };
 
-// Main state to store market metrics
+// List of top Nifty stocks mapped to their Yahoo Finance symbols for the Live Heatmap
+const HEATMAP_SYMBOLS = {
+  "RELIANCE": "RELIANCE.NS",
+  "TCS": "TCS.NS",
+  "HDFCBANK": "HDFCBANK.NS",
+  "INFY": "INFY.NS",
+  "ICICIBANK": "ICICIBANK.NS",
+  "SBIN": "SBIN.NS",
+  "ITC": "ITC.NS",
+  "LT": "LT.NS",
+  "BHARTIARTL": "BHARTIARTL.NS",
+  "KOTAKBANK": "KOTAKBANK.NS",
+  "TATAMOTORS": "TATAMOTORS.NS",
+  "AXISBANK": "AXISBANK.NS",
+  "HINDUNILVR": "HINDUNILVR.NS",
+  "MARUTI": "MARUTI.NS",
+  "SUNPHARMA": "SUNPHARMA.NS"
+};
+
+// Global market data state
 let marketData = {
-  nifty: { price: 23366.70, change: -49.85, percent: -0.21 },
-  banknifty: { price: 54496.25, change: 188.40, percent: 0.35 },
-  vix: { price: 12.34, change: 0.25, percent: 2.07 }
+  nifty: { price: 24892.50, change: 210.35, percent: 0.85 },
+  banknifty: { price: 52341.20, change: -62.80, percent: -0.12 },
+  vix: { price: 12.34, change: 0.25, percent: 2.10 }
 };
 
 /**
- * Safely locates and updates index widgets in the UI without altering your HTML/CSS structures.
+ * 1. LIVE HEATMAP ENGINE
+ * Finds stock elements by name (e.g., "RELIANCE") inside your #heatmap UI,
+ * updates their live prices, and applies beautiful live green/red background states.
  */
+function updateHeatmapUI(ticker, price, percentChange) {
+  const allElements = Array.from(document.querySelectorAll('*'));
+  const targetElement = allElements.find(el => 
+    el.textContent.trim().toUpperCase() === ticker.toUpperCase() && el.children.length === 0
+  );
+  
+  if (targetElement) {
+    const card = targetElement.closest('div');
+    if (card) {
+      const childTexts = Array.from(card.querySelectorAll('span, p, div'))
+        .filter(el => el.children.length === 0 && el !== targetElement);
+        
+      const priceEl = childTexts.find(el => /^[0-9,.]+(\s?)$/.test(el.textContent.trim().replace(/[^0-9.]/g, '')));
+      const percentEl = childTexts.find(el => el.textContent.includes('%') || el.textContent.includes('+') || el.textContent.includes('-'));
+
+      if (priceEl) {
+        priceEl.textContent = parseFloat(price).toFixed(2);
+      }
+      if (percentEl) {
+        percentEl.textContent = `${percentChange >= 0 ? '+' : ''}${parseFloat(percentChange).toFixed(2)}%`;
+      }
+
+      // Live color coding states
+      if (percentChange > 1.5) {
+        card.style.backgroundColor = '#065f46'; // deep green
+      } else if (percentChange > 0) {
+        card.style.backgroundColor = '#047857'; // light green
+      } else if (percentChange < -1.5) {
+        card.style.backgroundColor = '#991b1b'; // deep red
+      } else if (percentChange < 0) {
+        card.style.backgroundColor = '#b91c1c'; // light red
+      } else {
+        card.style.backgroundColor = '#374151'; // neutral gray
+      }
+      card.style.color = '#ffffff';
+    }
+  }
+}
+
+/**
+ * 2. LIVE OPTION CHAIN ENGINE
+ * Automatically maps live calls/puts to your option chain table rows.
+ */
+function updateOptionChainTableUI(calls, puts, underlyingPrice) {
+  const tbody = document.querySelector('#option-chain-tbody') || document.querySelector('tbody');
+  if (!tbody) return;
+
+  const chainMap = {};
+  calls.forEach(c => {
+    chainMap[c.strike] = { strike: c.strike, call: c, put: null };
+  });
+  puts.forEach(p => {
+    if (!chainMap[p.strike]) {
+      chainMap[p.strike] = { strike: p.strike, call: null, put: p };
+    } else {
+      chainMap[p.strike].put = p;
+    }
+  });
+
+  const sortedStrikes = Object.keys(chainMap).map(Number).sort((a, b) => a - b);
+  // Show strikes within range of spot price
+  const nearestStrikes = sortedStrikes.filter(strike => Math.abs(strike - underlyingPrice) < 400);
+
+  tbody.innerHTML = '';
+
+  nearestStrikes.forEach(strike => {
+    const item = chainMap[strike];
+    const c = item.call || { lastPrice: 0, volume: 0, openInterest: 0, change: 0 };
+    const p = item.put || { lastPrice: 0, volume: 0, openInterest: 0, change: 0 };
+
+    const tr = document.createElement('tr');
+    tr.className = "border-b border-gray-800 text-sm hover:bg-gray-950";
+
+    const isATM = Math.abs(strike - underlyingPrice) < 25;
+    if (isATM) {
+      tr.className += " bg-gray-900";
+    }
+
+    tr.innerHTML = `
+      <td class="px-3 py-2 text-right text-gray-400">${c.openInterest || 0}</td>
+      <td class="px-3 py-2 text-right ${c.change >= 0 ? 'text-green-500' : 'text-red-500'}">${c.change ? c.change.toFixed(1) : '0'}</td>
+      <td class="px-3 py-2 text-right text-gray-400">${c.volume || 0}</td>
+      <td class="px-3 py-2 text-right text-green-400 font-semibold">${c.lastPrice ? c.lastPrice.toFixed(2) : '0.00'}</td>
+      <td class="px-3 py-2 text-center bg-gray-900 text-yellow-500 font-bold border-l border-r border-gray-800">${strike}</td>
+      <td class="px-3 py-2 text-left text-green-400 font-semibold">${p.lastPrice ? p.lastPrice.toFixed(2) : '0.00'}</td>
+      <td class="px-3 py-2 text-left text-gray-400">${p.volume || 0}</td>
+      <td class="px-3 py-2 text-left ${p.change >= 0 ? 'text-green-500' : 'text-red-500'}">${p.change ? p.change.toFixed(1) : '0'}</td>
+      <td class="px-3 py-2 text-left text-gray-400">${p.openInterest || 0}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/**
+ * 3. REAL-TIME PCR CALCULATOR
+ * Analyzes open interest (OI) to calculate Put-Call-Ratio
+ */
+function calculatePCRandOI(calls, puts) {
+  let totalCallOI = 0;
+  let totalPutOI = 0;
+
+  calls.forEach(c => totalCallOI += (c.openInterest || 0));
+  puts.forEach(p => totalPutOI += (p.openInterest || 0));
+
+  const pcr = totalCallOI > 0 ? (totalPutOI / totalCallOI).toFixed(2) : '1.00';
+
+  const pcrElements = Array.from(document.querySelectorAll('*'))
+    .filter(el => el.textContent.trim().toUpperCase().includes('PCR') && el.children.length === 0);
+
+  pcrElements.forEach(el => {
+    const parent = el.closest('div');
+    if (parent) {
+      const valueEl = Array.from(parent.querySelectorAll('span, p, div'))
+        .find(child => !child.textContent.toUpperCase().includes('PCR') && /^[0-9.]+(\s?)$/.test(child.textContent.trim()));
+      if (valueEl) {
+        valueEl.textContent = pcr;
+        if (pcr > 1.1) valueEl.style.color = '#10B981';
+        else if (pcr < 0.9) valueEl.style.color = '#EF4444';
+      }
+    }
+  });
+}
+
+/**
+ * 4. REAL-TIME CORE INDICES & HEATMAP DATA INGESTION
+ */
+async function fetchLiveMarketData() {
+  const symbols = '^NSEI,^NSEBANK,^INDIAVIX,' + Object.values(HEATMAP_SYMBOLS).join(',');
+  const targetUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`;
+  // Safe CORS bypass proxy
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+  try {
+    const response = await fetch(proxyUrl);
+    if (!response.ok) throw new Error('Proxy connection failure');
+    const wrapper = await response.json();
+    const data = JSON.parse(wrapper.contents);
+    const quotes = data?.quoteResponse?.result || [];
+
+    quotes.forEach(quote => {
+      const symbol = quote.symbol;
+      
+      if (symbol === '^NSEI') {
+        marketData.nifty = { price: quote.regularMarketPrice, change: quote.regularMarketChange, percent: quote.regularMarketChangePercent };
+      } else if (symbol === '^NSEBANK') {
+        marketData.banknifty = { price: quote.regularMarketPrice, change: quote.regularMarketChange, percent: quote.regularMarketChangePercent };
+      } else if (symbol === '^INDIAVIX') {
+        marketData.vix = { price: quote.regularMarketPrice, change: quote.regularMarketChange, percent: quote.regularMarketChangePercent };
+      }
+      
+      for (const [name, yahooSymbol] of Object.entries(HEATMAP_SYMBOLS)) {
+        if (symbol === yahooSymbol) {
+          updateHeatmapUI(name, quote.regularMarketPrice, quote.regularMarketChangePercent);
+        }
+      }
+    });
+
+    renderAllIndices();
+  } catch (error) {
+    console.warn("Live API fetch failed. Using index simulation backup:", error);
+    useDataSimulation();
+  }
+}
+
+/**
+ * 5. REAL-TIME OPTION CHAIN DATA INGESTION
+ */
+async function fetchLiveOptionChain(symbol = '^NSEI') {
+  const targetUrl = `https://query1.finance.yahoo.com/v7/finance/options/${encodeURIComponent(symbol)}`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+  try {
+    const response = await fetch(proxyUrl);
+    if (!response.ok) throw new Error('Proxy connection failure');
+    const wrapper = await response.json();
+    const data = JSON.parse(wrapper.contents);
+    
+    const optionChain = data?.optionChain?.result?.[0];
+    if (!optionChain) return;
+
+    const strikes = optionChain.options?.[0] || {};
+    const calls = strikes.calls || [];
+    const puts = strikes.puts || [];
+    const underlyingPrice = optionChain.quote?.regularMarketPrice || marketData.nifty.price;
+
+    updateOptionChainTableUI(calls, puts, underlyingPrice);
+    calculatePCRandOI(calls, puts);
+
+  } catch (error) {
+    console.error("Failed to fetch live option chain:", error);
+  }
+}
+
 function updateIndexUI(label, price, change, percent) {
   const formattedPrice = parseFloat(price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const formattedPercent = `${change >= 0 ? '+' : ''}${parseFloat(percent).toFixed(2)}%`;
   
-  // 1. First attempt: Search for elements using direct standard IDs
   const priceId = `${label.toLowerCase()}-price`;
   const changeId = `${label.toLowerCase()}-change`;
   
@@ -40,7 +246,6 @@ function updateIndexUI(label, price, change, percent) {
     return;
   }
 
-  // 2. Fallback attempt: Search the DOM contextually to preserve your exact design
   const allElements = Array.from(document.querySelectorAll('*'));
   const headerElement = allElements.find(el => 
     el.textContent.trim().toUpperCase() === label.toUpperCase() && el.children.length === 0
@@ -52,98 +257,29 @@ function updateIndexUI(label, price, change, percent) {
       const childTexts = Array.from(cardContainer.querySelectorAll('span, p, div'))
         .filter(el => el.children.length === 0);
       
-      // Update the element that represents a standard currency or index price
       const priceTextEl = childTexts.find(el => /^[0-9,.]+(\s?)$/.test(el.textContent.trim().replace(/[^0-9.]/g, '')));
-      // Update the element that represents a percentage/direction change
       const changeTextEl = childTexts.find(el => el.textContent.includes('%') || el.textContent.includes('+') || el.textContent.includes('-'));
 
-      if (priceTextEl) {
-        priceTextEl.textContent = formattedPrice;
-      }
+      if (priceTextEl) priceTextEl.textContent = formattedPrice;
       if (changeTextEl) {
         changeTextEl.textContent = formattedPercent;
-        if (change >= 0) {
-          changeTextEl.style.color = '#10B981'; // Tailwind text-green-500
-        } else {
-          changeTextEl.style.color = '#EF4444'; // Tailwind text-red-500
-        }
+        changeTextEl.style.color = change >= 0 ? '#10B981' : '#EF4444';
       }
     }
   }
 }
 
-/**
- * Fetches real-time indexes from Yahoo Finance API
- */
-async function fetchRealTimeIndices() {
-  if (!CONFIG.rapidApiKey || CONFIG.rapidApiKey === 'YOUR_RAPID_API_KEY') {
-    useDataSimulation(); // Automatically fall back to realistic tick simulator if no API key is provided
-    return;
-  }
-
-  // Yahoo Finance Symbols for Nifty 50 (^NSEI), Bank Nifty (^NSEBANK), India VIX (^INDIAVIX)
-  const symbols = '^NSEI,^NSEBANK,^INDIAVIX';
-  const url = `https://${CONFIG.rapidApiHost}/market/v2/get-quotes?region=IN&symbols=${encodeURIComponent(symbols)}`;
-
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-key': CONFIG.rapidApiKey,
-        'x-rapidapi-host': CONFIG.rapidApiHost
-      }
-    });
-
-    if (!response.ok) throw new Error('API Request Failed');
-
-    const result = await response.json();
-    const quotes = result?.quoteResponse?.result || [];
-
-    quotes.forEach(quote => {
-      if (quote.symbol === '^NSEI') {
-        marketData.nifty = {
-          price: quote.regularMarketPrice,
-          change: quote.regularMarketChange,
-          percent: quote.regularMarketChangePercent
-        };
-      } else if (quote.symbol === '^NSEBANK') {
-        marketData.banknifty = {
-          price: quote.regularMarketPrice,
-          change: quote.regularMarketChange,
-          percent: quote.regularMarketChangePercent
-        };
-      } else if (quote.symbol === '^INDIAVIX') {
-        marketData.vix = {
-          price: quote.regularMarketPrice,
-          change: quote.regularMarketChange,
-          percent: quote.regularMarketChangePercent
-        };
-      }
-    });
-
-    renderAllIndices();
-  } catch (error) {
-    console.warn("Live API fetch failed. Using index simulation:", error);
-    useDataSimulation();
-  }
-}
-
-/**
- * Generates natural tick-by-tick adjustments during weekends or out-of-market hours
- */
 function useDataSimulation() {
   const applyRandomTick = (item) => {
-    const changeFactor = (Math.random() - 0.5) * 2; // minor price fluctuations
+    const changeFactor = (Math.random() - 0.5) * 1.5;
     item.price += changeFactor;
     item.change += changeFactor;
     item.percent = (item.change / (item.price - item.change)) * 100;
   };
-
   applyRandomTick(marketData.nifty);
   applyRandomTick(marketData.banknifty);
   
-  // VIX generally moves counter to key indices
-  const vixMove = (Math.random() - 0.5) * 0.1;
+  const vixMove = (Math.random() - 0.5) * 0.05;
   marketData.vix.price = Math.max(8, marketData.vix.price + vixMove);
   marketData.vix.percent = (vixMove / marketData.vix.price) * 100;
 
@@ -156,14 +292,15 @@ function renderAllIndices() {
   updateIndexUI('VIX', marketData.vix.price, marketData.vix.change, marketData.vix.percent);
 }
 
-// Start polling data updates
 function initMarketStream() {
   renderAllIndices();
-  fetchRealTimeIndices();
-  setInterval(fetchRealTimeIndices, CONFIG.updateIntervalMs);
+  fetchLiveMarketData();
+  fetchLiveOptionChain('^NSEI');
+  
+  setInterval(fetchLiveMarketData, CONFIG.updateIntervalMs);
+  setInterval(() => fetchLiveOptionChain('^NSEI'), CONFIG.updateIntervalMs * 2);
 }
 
-// Export functions to window context
 window.MarketStream = {
   init: initMarketStream,
   getLatest: () => marketData
