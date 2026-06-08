@@ -1,236 +1,1307 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>F&amp;O Analytics Pro</title>
-  <!-- Tailwind CSS CDN & Chart.js -->
+  <title>F&amp;O Analytics Pro | Institutional Derivatives Intelligence</title>
+  <meta name="description" content="F&O Analytics Pro delivers institutional-grade derivatives intelligence with real-time options chain, OI analysis, and AI-powered signals for serious traders.">
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    body {
-      background-color: #030712;
-      color: #f9fafb;
-      font-family: 'Inter', sans-serif;
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: '#f8fafc',
+            card: '#ffffff',
+            border: '#e2e8f0',
+          }
+        }
+      }
     }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f8fafc; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .market-badge {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    .signal-row { transition: background 0.2s; }
+    .signal-row:hover { background: rgba(248,250,252,0.9); }
   </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen">
-
-  <!-- TOP NAVIGATION BAR -->
-  <nav class="border-b border-gray-800 bg-gray-950/80 backdrop-blur px-6 py-4 flex justify-between items-center sticky top-0 z-40">
-    <span class="font-bold text-lg text-white flex items-center gap-2">
-      <span class="h-3 w-3 bg-blue-500 rounded-full"></span>
-      F&amp;O Analytics Pro
-    </span>
-    <div class="flex gap-4">
-      <input id="tickerInput" type="text" placeholder="Search indices, derivatives, options strike..." class="bg-gray-900 border border-gray-800 px-4 py-2 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-blue-500 w-80">
-      <button onclick="window.fetchProStock()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Access Pro Terminal</button>
+<body class="text-slate-800 min-h-screen antialiased selection:bg-blue-500/10 selection:text-blue-700">
+  <!-- TOP BAR NAVIGATION -->
+  <nav class="sticky top-0 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 py-3.5 flex items-center justify-between z-50">
+    <div class="flex items-center gap-2.5">
+      <div class="bg-blue-500/10 p-1.5 rounded-lg border border-blue-500/20">
+        <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
+      </div>
+      <span class="font-extrabold text-base tracking-tight bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">F&amp;O Analytics Pro</span>
+    </div>
+    
+    <!-- Central Search Bar -->
+    <div class="hidden md:flex items-center relative w-80">
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+      </span>
+      <input id="searchInput" type="text" placeholder="Search indices, derivatives, options strike..." class="w-full pl-9 pr-4 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-all">
+    </div>
+    <!-- Actions -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 text-xs">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span id="market-status-label" class="text-slate-500 font-medium">MARKET LIVE</span>
+      </div>
+      <button id="proTerminalBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-lg shadow-blue-600/10">
+        Access Pro Terminal
+      </button>
     </div>
   </nav>
-
-  <!-- MAIN WORKSPACE CONTAINER -->
+  <!-- CONTENT WORKSPACE -->
   <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 space-y-20">
-    
-    <!-- 1. HERO & WORKSPACE TERMINAL SECTION -->
+    <!-- HERO SECTION -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
       <div class="space-y-6">
-        <span class="text-xs bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full font-bold uppercase tracking-wider">Analytics</span>
-        <h1 class="text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">The financial world in full focus built on next-gen technology</h1>
-        <p class="text-gray-400 text-sm leading-relaxed">F&amp;O Analytics Pro delivers institutional-grade derivatives intelligence with sub-millisecond market data streaming, advanced options Greeks calculations, and AI-powered predictive models. Our platform processes over 2 million data points per second, providing hedge funds and proprietary trading desks with the analytical edge required in today's high-frequency markets.</p>
-        <p class="text-gray-400 text-sm leading-relaxed">From real-time volatility surface modeling to cross-asset correlation analysis, we empower traders with the tools to identify opportunities and manage risk across global derivatives markets.</p>
-        <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold text-sm transition">Request a Demo</button>
-      </div>
-
-      <!-- Real-Time Terminal Widget -->
-      <div class="bg-gray-950 border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden space-y-4">
-        <div class="flex justify-between items-center border-b border-gray-900 pb-4">
-          <span class="text-xs text-gray-500 font-mono tracking-wider flex items-center gap-2">
-            <span class="h-2 w-2 rounded-full bg-red-500"></span> F&amp;O Analytics Pro Terminal v4.2
-          </span>
-          <span class="text-xs text-green-500 font-mono flex items-center gap-1.5 uppercase">
-            <span class="h-2 w-2 rounded-full bg-green-500 animate-ping"></span> Live Matrix
-          </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] uppercase font-extrabold text-emerald-600 tracking-wider">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> analytics
+        </span>
+        <h1 class="text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-slate-900">
+          The financial world in full focus built on next-gen technology
+        </h1>
+        <p class="text-sm text-slate-500 leading-relaxed max-w-lg">
+          F&amp;O Analytics Pro delivers institutional-grade derivatives intelligence with sub-millisecond market data streaming, advanced options Greeks calculations, and AI-powered predictive models. Our platform processes over 2 million data points per second, providing hedge funds and proprietary trading desks with the analytical edge required in today's high-frequency markets.
+        </p>
+        <p class="text-xs text-slate-400 leading-relaxed max-w-lg">
+          From real-time volatility surface modeling to cross-asset correlation analysis, we empower traders with the tools to identify opportunities and manage risk across global derivatives markets.
+        </p>
+        <div class="flex items-center gap-4 pt-2">
+          <button id="demoBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-5 py-3 rounded-xl transition-all">
+            Request a Demo
+          </button>
         </div>
-        
-        <!-- Live Index Metrics Grid -->
-        <div class="grid grid-cols-3 gap-4 font-mono text-center">
-          <div class="bg-gray-900/40 p-4 border border-gray-800 rounded-xl">
-            <div class="text-xs text-gray-500 uppercase">NIFTY</div>
-            <div id="nifty-price" class="text-sm font-bold text-green-400 mt-1">24,892.50</div>
-            <div id="nifty-change" class="text-xs text-green-500 font-semibold mt-0.5">+0.85%</div>
+      </div>
+      <!-- Hero Dashboard Visual -->
+      <div class="bg-[#090d16] border border-slate-800 p-5 rounded-3xl relative overflow-hidden shadow-2xl">
+        <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/5 via-transparent to-transparent opacity-50"></div>
+        <div class="relative space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="text-[10px] text-slate-400 font-mono ml-2">F&amp;O Analytics Pro Terminal v4.2</span>
+            </div>
+            <span class="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded font-mono font-bold">LIVE MATRIX</span>
           </div>
-          <div class="bg-gray-900/40 p-4 border border-gray-800 rounded-xl">
-            <div class="text-xs text-gray-500 uppercase">BANKNIFTY</div>
-            <div id="banknifty-price" class="text-sm font-bold text-red-400 mt-1">52,341.20</div>
-            <div id="banknifty-change" class="text-xs text-red-500 font-semibold mt-0.5">-0.12%</div>
+          
+          <!-- Live Terminal Stats Row -->
+          <div class="grid grid-cols-3 gap-2 border-b border-slate-800/60 pb-3 text-[10px] text-slate-400 font-mono">
+            <div>
+              <span class="text-slate-500 block">NIFTY</span>
+              <span id="hero-nifty-price" class="text-emerald-400 font-bold">24,892.50</span>
+              <span id="hero-nifty-chg" class="text-emerald-500 font-medium ml-1">+0.85%</span>
+            </div>
+            <div>
+              <span class="text-slate-500 block">BANKNIFTY</span>
+              <span id="hero-bnf-price" class="text-rose-400 font-bold">52,341.20</span>
+              <span id="hero-bnf-chg" class="text-rose-500 font-medium ml-1">-0.12%</span>
+            </div>
+            <div>
+              <span class="text-slate-500 block">VIX</span>
+              <span id="hero-vix-price" class="text-rose-400 font-bold">12.34</span>
+              <span id="hero-vix-chg" class="text-rose-500 font-medium ml-1">-2.1%</span>
+            </div>
           </div>
-          <div class="bg-gray-900/40 p-4 border border-gray-800 rounded-xl">
-            <div class="text-xs text-gray-500 uppercase">VIX</div>
-            <div id="vix-price" class="text-sm font-bold text-red-400 mt-1">12.34</div>
-            <div id="vix-change" class="text-xs text-red-500 font-semibold mt-0.5">-2.10%</div>
+          <!-- Mini charts grid inside Terminal preview -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-[9px] text-slate-500 uppercase font-bold block mb-1">NIFTY FUTURES - 1H</span>
+              <div class="h-28">
+                <canvas id="heroMiniChart1"></canvas>
+              </div>
+            </div>
+            <div>
+              <span class="text-[9px] text-slate-500 uppercase font-bold block mb-1">OPTIONS HEATMAP</span>
+              <div class="grid grid-cols-5 gap-1.5 pt-2">
+                <div class="h-4 bg-emerald-500/80 rounded-sm"></div>
+                <div class="h-4 bg-emerald-500/80 rounded-sm"></div>
+                <div class="h-4 bg-emerald-500/40 rounded-sm"></div>
+                <div class="h-4 bg-rose-500/80 rounded-sm"></div>
+                <div class="h-4 bg-rose-500/80 rounded-sm"></div>
+                <div class="h-4 bg-amber-500/80 rounded-sm"></div>
+                <div class="h-4 bg-emerald-500/80 rounded-sm"></div>
+                <div class="h-4 bg-emerald-500/80 rounded-sm"></div>
+                <div class="h-4 bg-emerald-500/80 rounded-sm"></div>
+                <div class="h-4 bg-rose-500/40 rounded-sm"></div>
+                <div class="h-4 bg-emerald-500/80 rounded-sm"></div>
+                <div class="h-4 bg-emerald-500/40 rounded-sm"></div>
+                <div class="h-4 bg-rose-500/80 rounded-sm"></div>
+                <div class="h-4 bg-rose-500/80 rounded-sm"></div>
+                <div class="h-4 bg-rose-500/80 rounded-sm"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Micro Options Chain inside Terminal preview -->
+          <div class="border-t border-slate-800/80 pt-3 space-y-2">
+            <span class="text-[9px] text-slate-500 uppercase font-bold block">LIVE OPTIONS CHAIN - NIFTY 24900</span>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div class="flex justify-between text-slate-500 font-bold">
+                <span>OI</span><span>CHG</span><span>LTP</span><span class="text-slate-300">STRIKE</span><span>LTP</span><span>CHG</span><span>OI</span>
+              </div>
+              <div id="hero-chain-row1" class="flex justify-between text-slate-400">
+                <span>2.4M</span><span class="text-emerald-400">+12%</span><span>245.50</span><span class="text-yellow-400">24800</span><span>189.30</span><span class="text-rose-400">-8%</span><span>1.8M</span>
+              </div>
+              <div id="hero-chain-row2" class="flex justify-between text-slate-400 bg-slate-800/30 p-0.5 rounded">
+                <span>3.1M</span><span class="text-emerald-400">+18%</span><span>198.75</span><span class="text-yellow-400">24900</span><span>212.40</span><span class="text-rose-400">-5%</span><span>2.2M</span>
+              </div>
+              <div id="hero-chain-row3" class="flex justify-between text-slate-400">
+                <span>1.9M</span><span class="text-emerald-400">+6%</span><span>156.20</span><span class="text-yellow-400">25000</span><span>278.90</span><span class="text-emerald-400">+3%</span><span>2.8M</span>
+              </div>
+            </div>
+          </div>
+          <!-- Live Terminal metrics footer -->
+          <div class="border-t border-slate-800/80 pt-2 flex justify-between text-[9px] text-slate-500 font-mono">
+            <span>PCR: <strong id="hero-pcr" class="text-slate-300">1.34</strong></span>
+            <span>IV: <strong id="hero-iv" class="text-slate-300">18.2%</strong></span>
+            <span>MAX PAIN: <strong id="hero-maxpain" class="text-slate-300">24,900</strong></span>
+            <span>VOL: <strong id="hero-vol" class="text-slate-300">2.4Cr</strong></span>
           </div>
         </div>
       </div>
     </section>
-
-    <!-- 2. OPTIONS BLUEPRINT OPTIMIZER -->
+    <!-- Sub-navigation links bar -->
+    <div class="border-b border-slate-200 pb-3.5 flex flex-wrap gap-x-6 gap-y-2 justify-center text-xs text-slate-500 font-semibold">
+      <a href="#market-movers" class="hover:text-blue-600 transition-all">MARKET OVERVIEW</a>
+      <a href="#terminal" class="hover:text-blue-600 transition-all">TERMINAL IN ACTION</a>
+      <a href="#heatmap" class="hover:text-blue-600 transition-all">OI HEATMAP</a>
+      <a href="#blueprint" class="hover:text-blue-600 transition-all">STRATEGY BLUEPRINTS</a>
+      <a href="#option-chain" class="hover:text-blue-600 transition-all">EXECUTION MATRIX</a>
+    </div>
+    <!-- FUTURES MARKET MOVERS & SENTIMENT METER -->
+    <section id="market-movers" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Futures Market Movers Card -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+        <h3 class="text-xs font-bold text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+          <i data-lucide="trending-up" class="w-4 h-4 text-blue-600"></i> Futures Market Movers
+        </h3>
+        <div id="futures-movers-list" class="space-y-3.5 pt-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-800">NIFTY 50 FUTURES</span>
+            <div class="text-right">
+              <span id="nifty-fut-price" class="text-xs font-bold text-emerald-600">24,892.50</span>
+              <span id="nifty-fut-chg" class="text-[10px] text-emerald-500 font-bold block">+0.58%</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+            <span class="text-xs font-bold text-slate-800">BANKNIFTY FUTURES</span>
+            <div class="text-right">
+              <span id="bnf-fut-price" class="text-xs font-bold text-emerald-600">52,341.20</span>
+              <span id="bnf-fut-chg" class="text-[10px] text-emerald-500 font-bold block">+0.72%</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+            <span class="text-xs font-bold text-slate-800">FINNIFTY FUTURES</span>
+            <div class="text-right">
+              <span class="text-xs font-bold text-rose-600">21,120.45</span>
+              <span class="text-[10px] text-rose-500 font-bold block">-0.12%</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+            <span class="text-xs font-bold text-slate-800">MIDCPNIFTY FUTURES</span>
+            <div class="text-right">
+              <span class="text-xs font-bold text-emerald-600">10,412.50</span>
+              <span class="text-[10px] text-emerald-500 font-bold block">+0.22%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Sentiment Meter Card -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-sm">
+        <h3 class="text-xs font-bold text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+          <i data-lucide="activity" class="w-4 h-4 text-blue-600"></i> F&amp;O Market Sentiment Meter
+        </h3>
+        <div class="space-y-4 py-2">
+          <div class="flex justify-between text-[10px] text-slate-400 font-bold uppercase">
+            <span class="text-rose-500">Bearish</span>
+            <span class="text-amber-500">Neutral</span>
+            <span class="text-emerald-500">Bullish</span>
+          </div>
+          <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden relative">
+            <div class="bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-500 h-full w-full opacity-80"></div>
+            <div id="sentiment-needle" class="absolute top-0 bottom-0 w-1.5 bg-slate-900 shadow-xl left-[65%] border border-white transition-all duration-700"></div>
+          </div>
+          <div class="text-center">
+            <span id="pcr-badge" class="text-xs font-extrabold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">Put-Call Ratio (PCR): 1.34</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-center pt-2">
+          <div>
+            <span class="text-[9px] text-slate-400 font-semibold block uppercase">Calls OI</span>
+            <span id="calls-oi-val" class="text-xs font-bold text-rose-600">12.4M</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-400 font-semibold block uppercase">Puts OI</span>
+            <span id="puts-oi-val" class="text-xs font-bold text-emerald-600">16.6M</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-400 font-semibold block uppercase">Max Pain</span>
+            <span id="maxpain-val" class="text-xs font-bold text-slate-700">24,500</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-400 font-semibold block uppercase">VIX</span>
+            <span id="vix-val" class="text-xs font-bold text-rose-600">12.34</span>
+          </div>
+        </div>
+      </div>
+      <!-- Net Activity Card -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+        <h3 class="text-xs font-bold text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+          <i data-lucide="landmark" class="w-4 h-4 text-blue-600"></i> FII Position Flow
+        </h3>
+        <div class="space-y-3 pt-1">
+          <div class="flex justify-between text-xs font-medium">
+            <span class="text-slate-500">FII Net Long Ratio</span>
+            <span class="font-bold text-emerald-600">72.4%</span>
+          </div>
+          <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-emerald-500 h-full" style="width: 72%"></div>
+          </div>
+          <div class="flex justify-between text-xs pt-2 font-medium">
+            <span class="text-slate-500">Institutional Net Flow</span>
+            <span class="font-bold text-emerald-600">+2,340 CR</span>
+          </div>
+          <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-emerald-500 h-full" style="width: 65%"></div>
+          </div>
+          <div class="flex justify-between text-xs pt-2 font-medium">
+            <span class="text-slate-500">Day Net Position Change</span>
+            <span class="font-bold text-emerald-600">+1,120 CR</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- TERMINAL IN ACTION (PROFESSIONAL TOOLS) -->
+    <section id="terminal" class="space-y-12">
+      <div class="text-center space-y-2">
+        <span class="text-xs text-blue-600 font-extrabold uppercase tracking-wider">Terminal In Action</span>
+        <h2 class="text-2xl lg:text-3xl font-extrabold text-slate-900">Professional-grade tools for serious traders</h2>
+      </div>
+      <!-- Feature 1: Research at your fingertips -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="space-y-4">
+          <div class="bg-blue-500/10 p-2.5 rounded-xl border border-blue-500/20 w-fit">
+            <i data-lucide="file-search" class="w-5 h-5 text-blue-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900">Research at your fingertips</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            F&amp;O Analytics Pro provides interactive data matrices and exclusive outlooks with options expiration and strike prices from a dedicated team of market analysts. Get real-time open interest changes, strike-wise analysis, and institutional flow tracking in one unified dashboard.
+          </p>
+        </div>
+        
+        <!-- Feature 1 Card: Open Interest Scanner Mockup -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3.5 shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-blue-600"></i> Open Interest Scanner
+            </span>
+            <span class="text-[9px] text-slate-500">LIVE DATA</span>
+          </div>
+          <div id="oi-scanner-table" class="space-y-2.5 text-xs">
+            <div class="flex justify-between font-semibold text-slate-400">
+              <span>CALL OI</span><span>LTP</span><span class="text-slate-600 font-bold">STRIKE</span><span>LTP</span><span>PUT OI</span>
+            </div>
+            <div class="flex justify-between border-t border-slate-100 pt-2 text-slate-600">
+              <span class="text-rose-600 font-bold">12.4L</span><span>184.2</span><span class="text-slate-400 font-bold">22300</span><span>32.1</span><span class="text-emerald-600 font-bold">4.1L</span>
+            </div>
+            <div class="flex justify-between border-t border-slate-100 pt-2 text-slate-600 bg-emerald-50 p-1 rounded">
+              <span class="text-rose-600 font-bold">25.3L</span><span>105.8</span><span class="text-emerald-600 font-bold">22400</span><span>58.2</span><span class="text-emerald-600 font-bold">14.8L</span>
+            </div>
+            <div class="flex justify-between border-t border-slate-100 pt-2 text-slate-600">
+              <span class="text-rose-600 font-bold">4.2L</span><span>22.4</span><span class="text-slate-400 font-bold">22500</span><span>178.2</span><span class="text-emerald-600 font-bold">1.4L</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Feature 2: Customized Workspaces -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="lg:order-2 space-y-4">
+          <div class="bg-blue-500/10 p-2.5 rounded-xl border border-blue-500/20 w-fit">
+            <i data-lucide="layout" class="w-5 h-5 text-blue-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900">Make fast decisions with a customized workspace</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Our advanced layout framework delivers dynamic multi-strike security monitors, powerful alerting engines, and sophisticated option chain visualization tools that move markets. Build, save, and share custom workspace configurations tailored to your trading style.
+          </p>
+        </div>
+        
+        <!-- Feature 2 Card: Chart Workspace Mockup -->
+        <div class="lg:order-1 bg-white border border-slate-200 rounded-2xl p-4 space-y-3.5 shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="candlestick-chart" class="w-3.5 h-3.5 text-blue-600"></i> NIFTY 50 - 15m
+            </span>
+            <span class="text-[9px] bg-blue-500/10 text-blue-600 px-1.5 rounded font-bold">ONLINE</span>
+          </div>
+          <div class="h-44">
+            <canvas id="featureChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <!-- Feature 3: Mobile Access -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="space-y-4">
+          <div class="bg-blue-500/10 p-2.5 rounded-xl border border-blue-500/20 w-fit">
+            <i data-lucide="smartphone" class="w-5 h-5 text-blue-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900">Never miss a beat</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Access your derivative positions and F&amp;O volatility parameters right on your mobile device. Get instant push notifications for strike breakouts, unusual volume spikes, and critical block trades instantly.
+          </p>
+        </div>
+        
+        <!-- Feature 3: Mobile Phone Container -->
+        <div class="flex justify-center">
+          <div class="w-56 h-96 bg-slate-900 rounded-[36px] p-3 border-4 border-slate-700 shadow-xl relative overflow-hidden flex flex-col justify-between">
+            <div class="absolute top-1 left-1/2 transform -translate-x-1/2 w-20 h-4 bg-slate-800 rounded-full z-10"></div>
+            <div class="flex-1 flex flex-col justify-between pt-4 space-y-4 text-white">
+              <div class="flex items-center justify-between text-[10px] text-slate-400">
+                <span class="font-bold">F&amp;O Pro</span>
+                <i data-lucide="battery-charging" class="w-3.5 h-3.5 text-emerald-400"></i>
+              </div>
+              <div class="bg-slate-800/80 p-2.5 rounded-xl text-center space-y-1">
+                <span class="text-[8px] text-slate-400 font-medium block uppercase">Total Portfolio Value</span>
+                <span class="text-sm font-extrabold">₹4,28,450</span>
+                <span class="text-[8px] text-emerald-400 font-bold block">+3.14%</span>
+              </div>
+              <div class="flex-1 bg-slate-800/80 p-2.5 rounded-xl">
+                <span class="text-[8px] text-slate-400 font-medium block uppercase mb-1.5">Sector Trends</span>
+                <div class="space-y-1 text-[9px]">
+                  <div class="flex justify-between text-slate-200">
+                    <span>Banking</span><span class="text-emerald-400 font-bold">+3.4%</span>
+                  </div>
+                  <div class="flex justify-between text-slate-200 pt-1 border-t border-slate-700/50">
+                    <span>IT Sector</span><span class="text-rose-400 font-bold">-1.5%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="w-20 h-1 bg-slate-700 mx-auto rounded-full mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- LIVE OPEN INTEREST SECTOR HEATMAP -->
+    <section id="heatmap" class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Live Open Interest (OI) Sector Heatmap</h2>
+        <p class="text-xs text-slate-500">Real-time derivatives positioning across major indices and stocks</p>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/15 transition-all cursor-pointer">
+          <span class="text-[10px] text-slate-500 uppercase font-bold">BANKING</span>
+          <span class="text-sm font-extrabold text-emerald-600">+3.4%</span>
+        </div>
+        <div class="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/10 transition-all cursor-pointer">
+          <span class="text-[10px] text-slate-500 uppercase font-bold">AUTO</span>
+          <span class="text-sm font-extrabold text-emerald-600">+1.8%</span>
+        </div>
+        <div class="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-rose-500/15 transition-all cursor-pointer">
+          <span class="text-[10px] text-slate-500 uppercase font-bold">INFRA</span>
+          <span class="text-sm font-extrabold text-rose-600">-1.5%</span>
+        </div>
+        <div class="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-rose-500/15 transition-all cursor-pointer">
+          <span class="text-[10px] text-slate-500 uppercase font-bold">IT SECTOR</span>
+          <span class="text-sm font-extrabold text-rose-600">-1.5%</span>
+        </div>
+        <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/15 transition-all cursor-pointer">
+          <span class="text-[10px] text-slate-500 uppercase font-bold">RELIANCE</span>
+          <span class="text-sm font-extrabold text-emerald-600">+2.1%</span>
+        </div>
+        <div class="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/10 transition-all cursor-pointer">
+          <span class="text-[10px] text-slate-500 uppercase font-bold">TELECOM</span>
+          <span class="text-sm font-extrabold text-emerald-600">+0.8%</span>
+        </div>
+        <div class="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl flex flex-col justify-between h-20 text-center hover:bg-emerald-500/10 transition-all cursor-pointer">
+          <span class="text-[10px] text-slate-500 uppercase font-bold">METALS</span>
+          <span class="text-sm font-extrabold text-emerald-600">+0.6%</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-white border border-slate-200 rounded-xl text-center shadow-sm">
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Total OI Change</span>
+          <p class="text-sm font-bold text-emerald-600 mt-0.5">+2.4%</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Bullish Sectors</span>
+          <p class="text-sm font-bold text-emerald-600 mt-0.5">9 Sectors</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Bearish Sectors</span>
+          <p class="text-sm font-bold text-rose-600 mt-0.5">7 Sectors</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Market Bias</span>
+          <p class="text-sm font-bold text-emerald-600 mt-0.5">Bullish State</p>
+        </div>
+      </div>
+    </section>
+    <!-- OPTIONS STRATEGY BLUEPRINT OPTIMIZER -->
     <section id="blueprint" class="space-y-6">
       <div class="space-y-1">
-        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Options Strategy Blueprint Optimizer</h2>
-        <p class="text-xs text-gray-400">Select your market outlook to discover optimal derivatives strategies.</p>
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Options Strategy Blueprint Optimizer</h2>
+        <p class="text-xs text-slate-500">Select your market outlook to discover optimal derivatives strategies.</p>
       </div>
-      
-      <div class="bg-gray-950 border border-gray-800 p-6 rounded-2xl shadow-xl space-y-6">
-        <div class="flex gap-2 border-b border-gray-900 pb-4">
-          <button class="bg-blue-600/10 text-blue-400 border border-blue-500/20 px-4 py-2 rounded-lg text-xs font-semibold">Bullish</button>
-          <button class="bg-gray-900 border border-gray-800 text-gray-400 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-gray-800 transition">Bearish</button>
-          <button class="bg-gray-900 border border-gray-800 text-gray-400 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-gray-800 transition">High Volatility</button>
-          <button class="bg-gray-900 border border-gray-800 text-gray-400 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-gray-800 transition">Sideways</button>
-        </div>
-        
-        <!-- Recommendation Display -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="p-6 bg-gray-900/40 border border-gray-800 rounded-xl space-y-4">
-            <div>
-              <span class="text-xs bg-green-500/10 text-green-500 px-2 py-1 rounded font-bold uppercase tracking-wider">Recommended</span>
-              <h3 class="text-lg font-bold text-white mt-2">Bull Call Spread</h3>
-              <p class="text-gray-400 text-xs mt-1">Buy ATM Call, Sell OTM Call contract.</p>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Selection Tabs & Recommended Strategies Panel -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="switchStrategy('bullish')" id="strat-tab-bullish" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/25">Bullish</button>
+            <button onclick="switchStrategy('bearish')" id="strat-tab-bearish" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800">Bearish</button>
+            <button onclick="switchStrategy('volatile')" id="strat-tab-volatile" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800">High Volatility</button>
+            <button onclick="switchStrategy('sideways')" id="strat-tab-sideways" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800">Sideways</button>
+          </div>
+          <div id="strategy-details" class="space-y-4 flex-1 pt-3">
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <span class="text-[9px] bg-emerald-500/10 text-emerald-600 px-1.5 rounded font-bold uppercase">RECOMMENDED</span>
+              <h4 class="text-sm font-bold text-slate-800 mt-1">Bull Call Spread</h4>
+              <p class="text-[10px] text-slate-500 mt-0.5">Buy ATM Call, Sell OTM Call contract.</p>
             </div>
-            
-            <div class="grid grid-cols-2 gap-4 pt-2 font-mono text-xs">
+            <div class="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <span class="text-gray-500">Max Profit</span>
-                <div class="text-sm font-bold text-green-400 mt-0.5">₹5,400</div>
+                <span class="text-slate-400 block font-medium">Max Profit</span>
+                <span id="strat-profit" class="font-bold text-emerald-600">₹5,400</span>
               </div>
               <div>
-                <span class="text-gray-500">Max Loss</span>
-                <div class="text-sm font-bold text-red-400 mt-0.5">₹3,200</div>
+                <span class="text-slate-400 block font-medium">Max Loss</span>
+                <span id="strat-loss" class="font-bold text-rose-600">₹3,200</span>
               </div>
               <div>
-                <span class="text-gray-500">Breakeven</span>
-                <div class="text-sm font-bold text-gray-200 mt-0.5">22,350</div>
+                <span class="text-slate-400 block font-medium">Breakeven</span>
+                <span id="strat-breakeven" class="font-bold text-slate-700">22,350</span>
               </div>
               <div>
-                <span class="text-gray-500">Win Probability</span>
-                <div class="text-sm font-bold text-green-400 mt-0.5">62%</div>
+                <span class="text-slate-400 block font-medium">Win Probability</span>
+                <span id="strat-win" class="font-bold text-emerald-600">62%</span>
               </div>
             </div>
           </div>
-
-          <!-- Chart Area -->
-          <div class="bg-gray-900/20 border border-gray-800 p-6 rounded-xl relative min-h-[220px]">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-xs font-bold text-gray-300">Payoff Diagram Curve</span>
-              <span class="text-[10px] text-gray-500">Estimations based on Nifty 12 Jun weekly options</span>
-            </div>
-            <div class="h-44 w-full">
-              <canvas id="payoff-chart"></canvas>
-            </div>
+        </div>
+        <!-- Payoff Diagram Chart Visual -->
+        <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="text-sm font-bold text-slate-800">Payoff Diagram Curve</h3>
+            <span class="text-[10px] text-slate-400 font-medium">Estimations based on Nifty 12 Jun weekly options</span>
+          </div>
+          <div class="h-60">
+            <canvas id="payoffChart"></canvas>
           </div>
         </div>
       </div>
     </section>
-
-    <!-- 3. OPTION MATRIX CHAIN -->
+    <!-- INSTITUTIONAL DERIVATIVES ORDER FLOW LEDGER -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Institutional Derivatives Order Flow Ledger</h2>
+        <p class="text-xs text-slate-500">Real-time FII &amp; DII net contract positions across F&amp;O segments</p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-500 border-b border-slate-200 select-none font-bold">
+                <th class="p-4 w-24">CATEGORY</th>
+                <th class="p-4">ASSET CLASS</th>
+                <th class="p-4 text-center">NET POSITION</th>
+                <th class="p-4 text-center">DAY CHANGE</th>
+                <th class="p-4 text-right">VALUE (CR)</th>
+                <th class="p-4 text-center">SENTIMENT</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              <tr class="hover:bg-slate-50/50">
+                <td class="p-4 font-extrabold text-slate-900">FII</td>
+                <td class="p-4 font-medium">Index Futures</td>
+                <td class="p-4 text-center text-emerald-600 font-bold">+42,180</td>
+                <td class="p-4 text-center text-emerald-600 font-semibold">+8,420</td>
+                <td class="p-4 text-right font-bold">12,840 CR</td>
+                <td class="p-4 text-center"><span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Strong Bullish</span></td>
+              </tr>
+              <tr class="hover:bg-slate-50/50">
+                <td class="p-4 font-extrabold text-slate-900">FII</td>
+                <td class="p-4 font-medium">Index Options</td>
+                <td class="p-4 text-center text-rose-600 font-bold">-18,450</td>
+                <td class="p-4 text-center text-rose-600 font-semibold">-2,180</td>
+                <td class="p-4 text-right font-bold">8,240 CR</td>
+                <td class="p-4 text-center"><span class="bg-rose-500/10 border border-rose-500/20 text-rose-600 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Mild Bearish</span></td>
+              </tr>
+              <tr class="hover:bg-slate-50/50">
+                <td class="p-4 font-extrabold text-slate-900">FII</td>
+                <td class="p-4 font-medium">Stock Futures</td>
+                <td class="p-4 text-center text-emerald-600 font-bold">+20,920</td>
+                <td class="p-4 text-center text-emerald-600 font-semibold">+4,520</td>
+                <td class="p-4 text-right font-bold">16,340 CR</td>
+                <td class="p-4 text-center"><span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Bullish</span></td>
+              </tr>
+              <tr class="hover:bg-slate-50/50">
+                <td class="p-4 font-extrabold text-slate-900">DII</td>
+                <td class="p-4 font-medium">Index Futures</td>
+                <td class="p-4 text-center text-emerald-600 font-bold">+5,120</td>
+                <td class="p-4 text-center text-emerald-600 font-semibold">+820</td>
+                <td class="p-4 text-right font-bold">2,840 CR</td>
+                <td class="p-4 text-center"><span class="bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Neutral</span></td>
+              </tr>
+              <tr class="hover:bg-slate-50/50">
+                <td class="p-4 font-extrabold text-slate-900">DII</td>
+                <td class="p-4 font-medium">Index Options</td>
+                <td class="p-4 text-center text-emerald-600 font-bold">+12,840</td>
+                <td class="p-4 text-center text-emerald-600 font-semibold">+1,920</td>
+                <td class="p-4 text-right font-bold">5,640 CR</td>
+                <td class="p-4 text-center"><span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Bullish</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <!-- IMPLIED VOLATILITY (IV) SKEW MATRIX -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Implied Volatility (IV) Skew Matrix</h2>
+        <p class="text-xs text-slate-500">Volatility smile analysis across strike prices for NIFTY options</p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+        <div class="h-64">
+          <canvas id="skewChart"></canvas>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center pt-2">
+          <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+            <span class="text-[9px] text-slate-400 font-bold block uppercase mb-1">ATM IV</span>
+            <span class="text-sm font-extrabold text-slate-800">12.4%</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+            <span class="text-[9px] text-slate-400 font-bold block uppercase mb-1">IV Skew</span>
+            <span class="text-sm font-extrabold text-slate-800">+4.8%</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+            <span class="text-[9px] text-slate-400 font-bold block uppercase mb-1">Put Skew</span>
+            <span class="text-sm font-extrabold text-slate-800">11.2%</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+            <span class="text-[9px] text-slate-400 font-bold block uppercase mb-1">Call Skew</span>
+            <span class="text-sm font-extrabold text-slate-800">13.4%</span>
+          </div>
+        </div>
+        <div class="flex gap-3 bg-blue-500/5 border border-blue-500/10 p-3 rounded-xl">
+          <i data-lucide="info" class="w-5 h-5 text-blue-500 flex-shrink-0"></i>
+          <p class="text-[11px] text-slate-500 leading-relaxed">
+            <strong class="text-blue-600">Volatility Smile Interpretation:</strong> The current smile shape indicates elevated demand for OTM puts, suggesting institutional hedging activity. Put skew is higher than call skew, which is typical in risk-off market environments.
+          </p>
+        </div>
+      </div>
+    </section>
+    <!-- LIGHTNING FAST EXECUTION OPTION CHAIN MATRIX -->
     <section id="option-chain" class="space-y-6">
       <div class="space-y-1">
-        <h2 class="text-xl lg:text-2xl font-extrabold text-white">Lightning-Fast Execution Option Matrix</h2>
-        <p class="text-xs text-gray-400">Open Interest Matrix Scanner</p>
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Lightning-Fast Execution Option Matrix</h2>
+        <p class="text-xs text-slate-500">Professional-grade option chain with real-time Greeks, OI analysis, and one-click execution.</p>
       </div>
-      
-      <div class="bg-gray-950 border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
-        <table class="w-full text-left font-mono text-xs">
-          <thead class="bg-gray-900/60 border-b border-gray-800 text-gray-400">
-            <tr>
-              <th class="px-6 py-3 text-right">CALL OI</th>
-              <th class="px-6 py-3 text-right">LTP</th>
-              <th class="px-6 py-3 text-center">STRIKE</th>
-              <th class="px-6 py-3 text-left">LTP</th>
-              <th class="px-6 py-3 text-left">PUT OI</th>
-            </tr>
-          </thead>
-          <tbody id="option-chain-tbody" class="divide-y divide-gray-900 text-sm">
-            <tr>
-              <td class="px-6 py-3 text-right text-red-500">12.4L</td>
-              <td class="px-6 py-3 text-right">184.2</td>
-              <td class="px-6 py-3 text-center bg-gray-900/40 font-bold text-yellow-500 border-l border-r border-gray-800">22300</td>
-              <td class="px-6 py-3 text-left text-green-400">32.1</td>
-              <td class="px-6 py-3 text-left text-green-500">4.1L</td>
-            </tr>
-            <tr class="bg-gray-900/20">
-              <td class="px-6 py-3 text-right text-red-500">25.3L</td>
-              <td class="px-6 py-3 text-right">105.8</td>
-              <td class="px-6 py-3 text-center bg-gray-900/40 font-bold text-yellow-500 border-l border-r border-gray-800">22400</td>
-              <td class="px-6 py-3 text-left text-green-400">58.2</td>
-              <td class="px-6 py-3 text-left text-green-500">14.8L</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-3 text-right text-red-500">4.2L</td>
-              <td class="px-6 py-3 text-right">22.4</td>
-              <td class="px-6 py-3 text-center bg-gray-900/40 font-bold text-yellow-500 border-l border-r border-gray-800">22500</td>
-              <td class="px-6 py-3 text-left text-green-400">178.2</td>
-              <td class="px-6 py-3 text-left text-green-500">1.4L</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Underlying Selector -->
+      <div class="flex flex-wrap gap-2">
+        <button onclick="switchUnderlying('NIFTY')" id="underlying-nifty" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/25 transition-all">NIFTY</button>
+        <button onclick="switchUnderlying('BANKNIFTY')" id="underlying-bnf" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all">BANKNIFTY</button>
+      </div>
+      <!-- Option Chain Panel -->
+      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div class="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
+          <div class="flex items-center gap-2 bg-slate-100 p-1 border border-slate-200 rounded-lg">
+            <button class="px-2.5 py-1 text-xs font-semibold bg-white rounded text-slate-700 shadow-sm">05 Jun</button>
+            <button class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800">12 Jun</button>
+            <button class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800">19 Jun</button>
+            <button class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800">26 Jun</button>
+          </div>
+          <span class="text-[10px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded font-mono font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> LIVE MATRIX FEED
+          </span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-[11px] border-collapse min-w-[1200px]">
+            <thead>
+              <tr class="text-center font-bold text-slate-500 border-b border-slate-200 bg-slate-100/50">
+                <th colspan="8" class="py-2.5 text-rose-600 uppercase tracking-wider bg-rose-50/30">Call Options</th>
+                <th class="py-2.5 bg-slate-200/50 text-slate-700 border-x border-slate-200 w-24 sticky left-0 z-10 shadow-sm">Strike</th>
+                <th colspan="8" class="py-2.5 text-emerald-600 uppercase tracking-wider bg-emerald-50/30">Put Options</th>
+              </tr>
+              <tr class="bg-slate-50 text-slate-500 border-b border-slate-200 select-none font-semibold">
+                <th class="p-2 text-center w-20">OI (L)</th>
+                <th class="p-2 text-center w-16">CHG %</th>
+                <th class="p-2 text-center w-16">VOL</th>
+                <th class="p-2 text-center w-12">IV</th>
+                <th class="p-2 text-center w-14">BID</th>
+                <th class="p-2 text-center w-14">ASK</th>
+                <th class="p-2 text-right w-16">LTP</th>
+                <th class="p-2 text-center w-14">CHG</th>
+                <th class="p-2 text-center text-slate-700 bg-slate-100 font-bold border-x border-slate-200 w-24 sticky left-0 z-10">STRIKE</th>
+                <th class="p-2 text-center w-14">CHG</th>
+                <th class="p-2 text-left w-16">LTP</th>
+                <th class="p-2 text-center w-14">BID</th>
+                <th class="p-2 text-center w-14">ASK</th>
+                <th class="p-2 text-center w-12">IV</th>
+                <th class="p-2 text-center w-16">VOL</th>
+                <th class="p-2 text-center w-16">CHG %</th>
+                <th class="p-2 text-center w-20">OI (L)</th>
+              </tr>
+            </thead>
+            <tbody id="option-chain-tbody" class="divide-y divide-slate-100 text-slate-600 font-mono">
+              <!-- Populated dynamically by JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
-
-    <!-- 4. CUSTOM WORKSPACE BANNER -->
-    <section class="bg-gray-950 border border-gray-800 p-8 rounded-2xl shadow-xl space-y-4">
-      <h2 class="text-xl lg:text-2xl font-extrabold text-white">Make fast decisions with a customized workspace</h2>
-      <p class="text-gray-400 text-sm leading-relaxed">Our advanced layout framework delivers dynamic multi-strike security monitors, powerful alerting engines, and sophisticated option chain visualization tools that move markets. Build, save, and share custom workspace configurations tailored to your trading style.</p>
+    <!-- REAL-TIME AI SIGNAL INTELLIGENCE -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Real-Time AI Signal Intelligence</h2>
+        <p class="text-xs text-slate-500">Automated pattern recognition and institutional flow detection powered by machine learning algorithms scanning 500+ data points every second.</p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100">
+        <div class="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 signal-row">
+          <div class="flex items-start gap-3">
+            <span class="text-xs font-mono text-slate-400 pt-0.5" id="signal-time-1">14:32:18</span>
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-slate-800">NIFTY 22500 CE volume breakout spike detected</span>
+                <span class="text-[9px] bg-blue-500/10 text-blue-600 px-1.5 rounded font-bold uppercase">OI SPIKE</span>
+                <span class="text-[9px] bg-emerald-500/10 text-emerald-600 px-1.5 rounded font-bold uppercase">BULLISH</span>
+              </div>
+              <p class="text-xs text-slate-500">Unusual spike in volume with cumulative option writing interest scaling +340% over historical 5-day baseline.</p>
+            </div>
+          </div>
+          <button class="text-xs text-blue-600 hover:text-blue-500 font-semibold transition-all">View Details</button>
+        </div>
+        <div class="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 signal-row">
+          <div class="flex items-start gap-3">
+            <span class="text-xs font-mono text-slate-400 pt-0.5">14:28:45</span>
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-slate-800">BANKNIFTY futures crossed key resistance level</span>
+                <span class="text-[9px] bg-blue-500/10 text-blue-600 px-1.5 rounded font-bold uppercase">TECHNICAL</span>
+                <span class="text-[9px] bg-emerald-500/10 text-emerald-600 px-1.5 rounded font-bold uppercase">BULLISH</span>
+              </div>
+              <p class="text-xs text-slate-500">Bank Nifty futures crossed major technical resistance of 47,800. Strong price volume action suggests upward build-up continuation.</p>
+            </div>
+          </div>
+          <button class="text-xs text-blue-600 hover:text-blue-500 font-semibold transition-all">View Details</button>
+        </div>
+        <div class="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 signal-row">
+          <div class="flex items-start gap-3">
+            <span class="text-xs font-mono text-slate-400 pt-0.5">14:24:12</span>
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-slate-800">IV percentile weekly options crossed 85th percentile</span>
+                <span class="text-[9px] bg-amber-500/10 text-amber-600 px-1.5 rounded font-bold uppercase">VOLATILITY</span>
+                <span class="text-[9px] bg-slate-200 text-slate-700 px-1.5 rounded font-bold uppercase">NEUTRAL</span>
+              </div>
+              <p class="text-xs text-slate-500">Volatility index showing sharp adjustments ahead of weekly expiry settlements.</p>
+            </div>
+          </div>
+          <button class="text-xs text-blue-600 hover:text-blue-500 font-semibold transition-all">View Details</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-white border border-slate-200 rounded-2xl text-center shadow-sm">
+        <div>
+          <span id="signals-today" class="text-sm font-extrabold text-slate-800 block">847</span>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Signals Today</span>
+        </div>
+        <div>
+          <span class="text-sm font-extrabold text-emerald-600 block">73%</span>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Accuracy Rate</span>
+        </div>
+        <div>
+          <span class="text-sm font-extrabold text-slate-800 block">24ms</span>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Query Latency</span>
+        </div>
+        <div>
+          <span class="text-sm font-extrabold text-slate-800 block">500+</span>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Data Points / Sec</span>
+        </div>
+      </div>
     </section>
-
+    <!-- OPTIONS MAX PAIN & MULTI-STRIKE OPEN INTEREST -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Options Max Pain &amp; Multi-Strike Open Interest</h2>
+        <p class="text-xs text-slate-500">Visualization of Call and Put open interest distribution across key strike prices to identify pain levels.</p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Strike Analysis Chart</span>
+          <span id="maxpain-label" class="text-xs text-emerald-600 font-bold bg-emerald-50/80 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">MAX PAIN FOCUS: 22,450</span>
+        </div>
+        <div class="h-64">
+          <canvas id="maxPainBarChart"></canvas>
+        </div>
+      </div>
+    </section>
+    <!-- IMPLIED VOLATILITY (IV) vs HISTORICAL VOLATILITY (HV) -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Implied Volatility (IV) vs Historical Volatility (HV) Analysis</h2>
+        <p class="text-xs text-slate-500">Track real-time IV against 30-day historical volatility to identify potential market mispricings and trading opportunities.</p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+        <div class="h-64">
+          <canvas id="ivHvLineChart"></canvas>
+        </div>
+      </div>
+    </section>
+    <!-- LIVE INSTITUTIONAL BLOCK TRADES & VOLUME SPIKES -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Live Institutional Block Trades &amp; Volume Spikes</h2>
+        <p class="text-xs text-slate-500">Real-time tracking of large institutional orders and significant volume movements across F&amp;O segments.</p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-500 border-b border-slate-200 select-none font-bold">
+                <th class="p-4">TIMESTAMP</th>
+                <th class="p-4">SYMBOL / ASSET</th>
+                <th class="p-4 text-center">VOLUME</th>
+                <th class="p-4 text-right">ORDER VALUE (CR)</th>
+                <th class="p-4 text-center">EXECUTION TYPE</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              <tr class="hover:bg-slate-50/50">
+                <td class="p-4 font-mono text-slate-400">14:32:18</td>
+                <td class="p-4 font-bold text-slate-800">NIFTY 22500 CE</td>
+                <td class="p-4 text-center font-mono text-slate-600">1,50,000 QTY</td>
+                <td class="p-4 text-right font-bold text-slate-900">₹14.2 CR</td>
+                <td class="p-4 text-center"><span class="bg-blue-500/10 border border-blue-500/20 text-blue-600 px-2.5 py-0.5 rounded font-semibold text-[10px]">Block Trade</span></td>
+              </tr>
+              <tr class="hover:bg-slate-50/50">
+                <td class="p-4 font-mono text-slate-400">14:31:15</td>
+                <td class="p-4 font-bold text-slate-800">BANKNIFTY 48000 PE</td>
+                <td class="p-4 text-center font-mono text-slate-600">85,000 QTY</td>
+                <td class="p-4 text-right font-bold text-slate-900">₹9.8 CR</td>
+                <td class="p-4 text-center"><span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 px-2.5 py-0.5 rounded font-semibold text-[10px]">Long Build-up</span></td>
+              </tr>
+              <tr class="hover:bg-slate-50/50">
+                <td class="p-4 font-mono text-slate-400">14:25:40</td>
+                <td class="p-4 font-bold text-slate-800">RELIANCE FUT</td>
+                <td class="p-4 text-center font-mono text-slate-600">2,25,000 QTY</td>
+                <td class="p-4 text-right font-bold text-slate-900">₹21.5 CR</td>
+                <td class="p-4 text-center"><span class="bg-blue-500/10 border border-blue-500/20 text-blue-600 px-2.5 py-0.5 rounded font-semibold text-[10px]">Block Trade</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <!-- GLOBAL CROSS-ASSET OPTIONS & MACRO INDICATORS -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Global Cross-Asset Options &amp; Macro Indicators</h2>
+        <p class="text-xs text-slate-500">Monitor key global derivative and macro indicators influencing Indian F&amp;O markets.</p>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col justify-between h-24 shadow-sm">
+          <span class="text-[10px] text-slate-400 font-bold uppercase">CBOE VIX</span>
+          <span class="text-xl font-extrabold text-slate-800">14.82</span>
+          <span class="text-[9px] text-slate-500 leading-none">Fear gauge showing low market anxiety</span>
+        </div>
+        <div class="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col justify-between h-24 shadow-sm">
+          <span class="text-[10px] text-slate-400 font-bold uppercase">US Dollar Index</span>
+          <span class="text-xl font-extrabold text-slate-800">104.35</span>
+          <span class="text-[9px] text-slate-500 leading-none">Stable dollar strength and mixed indicators</span>
+        </div>
+        <div class="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col justify-between h-24 shadow-sm">
+          <span class="text-[10px] text-slate-400 font-bold uppercase">Global Index Futures</span>
+          <span class="text-xl font-extrabold text-emerald-600">+1.2%</span>
+          <span class="text-[9px] text-slate-500 leading-none">Risk-on sentiment in global markets</span>
+        </div>
+        <div class="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col justify-between h-24 shadow-sm">
+          <span class="text-[10px] text-slate-400 font-bold uppercase">Brent Crude Oil</span>
+          <span class="text-xl font-extrabold text-slate-800">$78.45</span>
+          <span class="text-[9px] text-slate-500 leading-none">Energy sector seeing profit booking</span>
+        </div>
+      </div>
+    </section>
+    <!-- MARKET NEWS & INSIGHTS -->
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl lg:text-2xl font-extrabold text-slate-900">Market News &amp; Insights</h2>
+        <p class="text-xs text-slate-500">Latest analysis from our editorial desk</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden group hover:border-slate-300 transition-all shadow-sm cursor-pointer">
+          <div class="p-5 space-y-3">
+            <span class="text-[9px] bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold uppercase">Artificial Intelligence</span>
+            <h4 class="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-all leading-snug">AI-Powered Sentiment Indicators Highlight Key Market Reversals</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">Our advanced neural models identified deep institutional order flow imbalances prior to major structural changes in NIFTY options positioning...</p>
+            <div class="flex justify-between items-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
+              <span>3 hours ago</span><span class="font-bold text-blue-600">Read article</span>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden group hover:border-slate-300 transition-all shadow-sm cursor-pointer">
+          <div class="p-5 space-y-3">
+            <span class="text-[9px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold uppercase">Market Analysis</span>
+            <h4 class="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-all leading-snug">Global Volatility Index Signals Major Shift in Institutional Positioning</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">FII cumulative derivative exposures stand aligned to risk-off paradigms, following structural shifts inside sovereign yields matrices...</p>
+            <div class="flex justify-between items-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
+              <span>5 hours ago</span><span class="font-bold text-blue-600">Read article</span>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden group hover:border-slate-300 transition-all shadow-sm cursor-pointer">
+          <div class="p-5 space-y-3">
+            <span class="text-[9px] bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold uppercase">Regulation</span>
+            <h4 class="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-all leading-snug">New Derivative Trading Rules Set to Reshape F&amp;O Landscape in 2026</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">Market participants prepare for structural modifications to weekly options pricing and margin requirements adjustments coming this winter...</p>
+            <div class="flex justify-between items-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
+              <span>12 hours ago</span><span class="font-bold text-blue-600">Read article</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
-
-  <!-- SYSTEM CHART INITIALIZATION -->
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-200 mt-20 px-4 lg:px-8 py-8 text-center text-xs text-slate-400">
+    <p class="font-semibold text-slate-600 mb-1">F&amp;O Analytics Pro</p>
+    <p>Institutional-grade derivatives intelligence. All data displayed is for informational purposes only and does not constitute financial advice.</p>
+  </footer>
+  <!-- CHART & INTERACTION SCRIPTS -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const ctx = document.getElementById('payoff-chart');
-      if (ctx) {
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: ['22000', '22100', '22200', '22300', '22400', '22500', '22600', '22700'],
-            datasets: [
-              {
-                label: 'Payoff Curve',
-                data: [-3200, -3200, -3200, -1200, 1800, 4800, 5400, 5400],
-                borderColor: '#3b82f6',
-                borderWidth: 2,
-                tension: 0.3,
-                fill: false
-              },
-              {
-                label: 'Historical Volatility (HV)',
-                data: [12.1, 12.3, 12.4, 12.2, 12.5, 12.8, 12.6, 12.4],
-                borderColor: '#a855f7',
-                borderWidth: 2,
-                tension: 0.3,
-                fill: false
-              }
-            ]
+    // Initialize Lucide Icons
+    lucide.createIcons();
+    // Chart Global Styling defaults for Light Theme
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.12)';
+    // ============================
+    // HERO MINI CHART
+    // ============================
+    const heroCtx1 = document.getElementById('heroMiniChart1').getContext('2d');
+    new Chart(heroCtx1, {
+      type: 'bar',
+      data: {
+        labels: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'],
+        datasets: [
+          {
+            label: 'Calls OI',
+            data: [4, 6, 12, 18, 25, 12, 28, 14, 30],
+            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+            borderRadius: 3
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'top' } },
-            scales: {
-              x: { grid: { display: false } },
-              y: { grid: { color: 'rgba(148, 163, 184, 0.08)' } }
-            }
+          {
+            label: 'Puts OI',
+            data: [15, 18, 24, 20, 22, 10, 8, 4, 1],
+            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+            borderRadius: 3
           }
-        });
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { display: false }, y: { display: false } }
       }
     });
+    // ============================
+    // FEATURE CHART
+    // ============================
+    const featureCtx = document.getElementById('featureChart').getContext('2d');
+    new Chart(featureCtx, {
+      type: 'line',
+      data: {
+        labels: ['09:15', '10:15', '11:15', '12:15', '13:15', '14:15', '15:15'],
+        datasets: [{
+          data: [22300, 22350, 22320, 22420, 22400, 22480, 22453.8],
+          borderColor: '#2563eb',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#2563eb',
+          fill: false,
+          tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } } }
+      }
+    });
+    // ============================
+    // PAYOFF DIAGRAM CHART
+    // ============================
+    const payoffCtx = document.getElementById('payoffChart').getContext('2d');
+    let payoffChart = new Chart(payoffCtx, {
+      type: 'line',
+      data: {
+        labels: ['22100', '22200', '22300', '22400', '22500', '22600', '22700'],
+        datasets: [{
+          label: 'Payoff Value (₹)',
+          data: [-3200, -3200, -1800, 2200, 5400, 5400, 5400],
+          borderColor: '#10b981',
+          borderWidth: 3,
+          pointRadius: 4.5,
+          pointBackgroundColor: '#ffffff',
+          tension: 0.15,
+          fill: {
+            target: 'origin',
+            above: 'rgba(16, 185, 129, 0.04)',
+            below: 'rgba(239, 68, 68, 0.04)'
+          }
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(148, 163, 184, 0.08)' } }
+        }
+      }
+    });
+    // ============================
+    // IV SKEW CHART
+    // ============================
+    const skewCtx = document.getElementById('skewChart').getContext('2d');
+    new Chart(skewCtx, {
+      type: 'line',
+      data: {
+        labels: ['22100', '22200', '22300', '22400', '22500', '22600', '22700'],
+        datasets: [{
+          label: 'Implied Volatility (IV %)',
+          data: [17.5, 14.8, 12.9, 12.4, 13.5, 15.6, 18.2],
+          borderColor: '#2563eb',
+          borderWidth: 2,
+          pointBackgroundColor: '#2563eb',
+          tension: 0.35,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(148, 163, 184, 0.08)' } }
+        }
+      }
+    });
+    // ============================
+    // MAX PAIN BAR CHART
+    // ============================
+    const maxPainCtx = document.getElementById('maxPainBarChart').getContext('2d');
+    new Chart(maxPainCtx, {
+      type: 'bar',
+      data: {
+        labels: ['22300', '22400', '22450', '22500', '22550', '22600'],
+        datasets: [
+          {
+            label: 'Calls OI',
+            data: [12.4, 25.3, 35.1, 8.9, 15.6, 42.8],
+            backgroundColor: 'rgba(239, 68, 68, 0.85)',
+            borderRadius: 4
+          },
+          {
+            label: 'Puts OI',
+            data: [41.2, 33.1, 45.4, 12.4, 3.2, 1.4],
+            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(148, 163, 184, 0.08)' } }
+        }
+      }
+    });
+    // ============================
+    // IV vs HV LINE CHART
+    // ============================
+    const ivHvCtx = document.getElementById('ivHvLineChart').getContext('2d');
+    new Chart(ivHvCtx, {
+      type: 'line',
+      data: {
+        labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9', 'Day 10'],
+        datasets: [
+          {
+            label: 'Implied Volatility (IV)',
+            data: [13.4, 14.1, 13.9, 14.5, 15.2, 14.8, 14.1, 13.8, 13.5, 12.4],
+            borderColor: '#2563eb',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: false
+          },
+          {
+            label: 'Historical Volatility (HV)',
+            data: [12.1, 12.3, 12.4, 12.2, 12.5, 12.8, 12.6, 12.4, 12.3, 12.2],
+            borderColor: '#a855f7',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(148, 163, 184, 0.08)' } }
+        }
+      }
+    });
+    // ============================
+    // STRATEGY BLUEPRINT SWITCHER
+    // ============================
+    function switchStrategy(type) {
+      const tabs = ['bullish', 'bearish', 'volatile', 'sideways'];
+      tabs.forEach(tab => {
+        const dom = document.getElementById('strat-tab-' + tab);
+        if (dom) {
+          dom.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-800 transition-all';
+        }
+      });
+      document.getElementById('strat-tab-' + type).className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/25 transition-all';
+      const details = {
+        bullish: {
+          title: 'Bull Call Spread',
+          desc: 'Buy ATM Call, Sell OTM Call contract.',
+          profit: '₹5,400',
+          loss: '₹3,200',
+          breakeven: '22,350',
+          win: '62%',
+          data: [-3200, -3200, -1800, 2200, 5400, 5400, 5400],
+          color: '#10b981'
+        },
+        bearish: {
+          title: 'Bear Put Spread',
+          desc: 'Buy ATM Put, Sell OTM Put contract.',
+          profit: '₹6,100',
+          loss: '₹2,900',
+          breakeven: '22,450',
+          win: '58%',
+          data: [5400, 5400, 2200, -1800, -3200, -3200, -3200],
+          color: '#ef4444'
+        },
+        volatile: {
+          title: 'Long Straddle',
+          desc: 'Buy ATM Call and Put contract simultaneously.',
+          profit: 'Unlimited',
+          loss: '₹5,800',
+          breakeven: '22,150 / 22,650',
+          win: '45%',
+          data: [8200, 4200, 200, -3800, 200, 4200, 8200],
+          color: '#2563eb'
+        },
+        sideways: {
+          title: 'Short Iron Condor',
+          desc: 'Sell inner Call/Put, Buy outer protection.',
+          profit: '₹4,100',
+          loss: '₹2,100',
+          breakeven: '22,250 / 22,550',
+          win: '72%',
+          data: [-2100, -1100, 2900, 4100, 2900, -1100, -2100],
+          color: '#f59e0b'
+        }
+      };
+      const selected = details[type];
+      document.getElementById('strategy-details').innerHTML = `
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <span class="text-[9px] bg-blue-500/10 text-blue-600 px-1.5 rounded font-bold uppercase">RECOMMENDED</span>
+          <h4 class="text-sm font-bold text-slate-800 mt-1">${selected.title}</h4>
+          <p class="text-[10px] text-slate-500 mt-0.5">${selected.desc}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <span class="text-slate-400 block font-medium">Max Profit</span>
+            <span class="font-bold text-emerald-600">${selected.profit}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block font-medium">Max Loss</span>
+            <span class="font-bold text-rose-400">${selected.loss}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block font-medium">Breakeven</span>
+            <span class="font-bold text-slate-700">${selected.breakeven}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block font-medium">Win Probability</span>
+            <span class="font-bold text-emerald-600">${selected.win}</span>
+          </div>
+        </div>
+      `;
+      payoffChart.data.datasets[0].data = selected.data;
+      payoffChart.data.datasets[0].borderColor = selected.color;
+      payoffChart.update();
+    }
+    // ============================
+    // LIVE DATA FETCH FROM WORKER API
+    // ============================
+    let activeUnderlying = 'NIFTY';
+    function switchUnderlying(underlying) {
+      activeUnderlying = underlying;
+      ['NIFTY', 'BANKNIFTY'].forEach(u => {
+        const btn = document.getElementById('underlying-' + u.toLowerCase().replace('banknifty', 'bnf'));
+        if (!btn) return;
+        btn.className = u === underlying
+          ? 'px-4 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/25 transition-all'
+          : 'px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all';
+      });
+      fetchMarketData();
+    }
+    async function fetchMarketData() {
+      try {
+        const res = await fetch('/api/data?underlying=' + activeUnderlying);
+        if (!res.ok) throw new Error('API response: ' + res.status);
+        const data = await res.json();
+        if (data && !data.error) {
+          updateDashboardCards(data);
+          renderOptionChainTable(data.options, data.spotPrice);
+        }
+      } catch (err) {
+        console.warn('Live API unavailable, using placeholder data:', err.message);
+        // Graceful fallback - keep displayed data unchanged
+      }
+    }
+    function updateDashboardCards(data) {
+      const fmtPrice = (n) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtPct = (n) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+      if (data.underlying === 'NIFTY') {
+        const el = document.getElementById('nifty-fut-price');
+        if (el) el.textContent = fmtPrice(data.spotPrice);
+        const cel = document.getElementById('nifty-fut-chg');
+        if (cel) {
+          cel.textContent = fmtPct(data.pcr >= 1 ? 0.58 : -0.32);
+          cel.className = 'text-[10px] font-bold block ' + (data.pcr >= 1 ? 'text-emerald-500' : 'text-rose-500');
+        }
+        // Update hero row too
+        const hp = document.getElementById('hero-nifty-price');
+        if (hp) hp.textContent = fmtPrice(data.spotPrice);
+      } else if (data.underlying === 'BANKNIFTY') {
+        const el = document.getElementById('bnf-fut-price');
+        if (el) el.textContent = fmtPrice(data.spotPrice);
+      }
+      // PCR badge
+      const pcrBadge = document.getElementById('pcr-badge');
+      if (pcrBadge) pcrBadge.textContent = 'Put-Call Ratio (PCR): ' + data.pcr.toFixed(2);
+      // Sentiment needle (PCR > 1 = bullish = right side)
+      const needle = document.getElementById('sentiment-needle');
+      if (needle) {
+        const pct = Math.min(90, Math.max(10, data.pcr / 2 * 100));
+        needle.style.left = pct + '%';
+      }
+      // PCR / maxpain labels
+      const pcrEl = document.getElementById('hero-pcr');
+      if (pcrEl) pcrEl.textContent = data.pcr.toFixed(2);
+      const mpEl = document.getElementById('hero-maxpain');
+      if (mpEl) mpEl.textContent = data.maxPain.toLocaleString('en-IN');
+      const maxpainVal = document.getElementById('maxpain-val');
+      if (maxpainVal) maxpainVal.textContent = data.maxPain.toLocaleString('en-IN');
+      const maxpainLabel = document.getElementById('maxpain-label');
+      if (maxpainLabel) maxpainLabel.textContent = 'MAX PAIN FOCUS: ' + data.maxPain.toLocaleString('en-IN');
+      // Calls / Puts OI
+      const callsOI = document.getElementById('calls-oi-val');
+      if (callsOI) callsOI.textContent = (data.callsOI / 1e6).toFixed(1) + 'M';
+      const putsOI = document.getElementById('puts-oi-val');
+      if (putsOI) putsOI.textContent = (data.putsOI / 1e6).toFixed(1) + 'M';
+    }
+    function renderOptionChainTable(options, spot) {
+      const tbody = document.getElementById('option-chain-tbody');
+      if (!tbody || !options) return;
+      tbody.innerHTML = '';
+      // Show 8 strikes nearest to spot
+      const sorted = [...options].sort((a, b) => Math.abs(a.strike - spot) - Math.abs(b.strike - spot)).slice(0, 8);
+      sorted.sort((a, b) => a.strike - b.strike);
+      sorted.forEach(opt => {
+        const isATM = Math.abs(opt.strike - spot) < 30;
+        const isITMCall = opt.strike < spot;
+        const isITMPut = opt.strike > spot;
+        const tr = document.createElement('tr');
+        let rowClass = 'hover:bg-slate-50/80 ';
+        if (isATM) rowClass += 'bg-blue-50/30 border-y border-blue-200';
+        else if (isITMCall) rowClass += 'bg-amber-500/[0.03]';
+        tr.className = rowClass;
+        tr.innerHTML = `
+          <td class="p-2 text-center text-rose-600 font-bold">${(opt.ce.oi / 1e5).toFixed(2)}</td>
+          <td class="p-2 text-center ${opt.ce.changeOi >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${opt.ce.changeOi >= 0 ? '+' : ''}${((opt.ce.changeOi / opt.ce.oi) * 100).toFixed(1)}%</td>
+          <td class="p-2 text-center text-slate-400">${(opt.ce.volume / 1000).toFixed(1)}K</td>
+          <td class="p-2 text-center">${opt.ce.iv.toFixed(1)}</td>
+          <td class="p-2 text-center">${(opt.ce.ltp * 0.998).toFixed(1)}</td>
+          <td class="p-2 text-center">${(opt.ce.ltp * 1.002).toFixed(1)}</td>
+          <td class="p-2 text-right font-bold text-slate-800">${opt.ce.ltp.toFixed(2)}</td>
+          <td class="p-2 text-center ${opt.ce.changeOi >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${opt.ce.changeOi >= 0 ? '+' : '-'}${Math.abs(opt.ce.changeOi / 1000).toFixed(1)}K</td>
+          
+          <td class="p-2 text-center font-extrabold ${isATM ? 'text-blue-600 bg-blue-50 border-x border-blue-200' : 'text-slate-800 bg-slate-100/80 border-x border-slate-200'} sticky left-0 z-10 shadow-sm font-sans">
+            ${opt.strike.toLocaleString('en-IN')}${isATM ? '<span class="text-[8px] font-bold block text-blue-500 uppercase">ATM</span>' : ''}
+          </td>
+          
+          <td class="p-2 text-center ${opt.pe.changeOi >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${opt.pe.changeOi >= 0 ? '+' : '-'}${Math.abs(opt.pe.changeOi / 1000).toFixed(1)}K</td>
+          <td class="p-2 text-left font-bold text-slate-800">${opt.pe.ltp.toFixed(2)}</td>
+          <td class="p-2 text-center">${(opt.pe.ltp * 0.998).toFixed(1)}</td>
+          <td class="p-2 text-center">${(opt.pe.ltp * 1.002).toFixed(1)}</td>
+          <td class="p-2 text-center">${opt.pe.iv.toFixed(1)}</td>
+          <td class="p-2 text-center text-slate-400">${(opt.pe.volume / 1000).toFixed(1)}K</td>
+          <td class="p-2 text-center ${opt.pe.changeOi >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${opt.pe.changeOi >= 0 ? '+' : ''}${((opt.pe.changeOi / opt.pe.oi) * 100).toFixed(1)}%</td>
+          <td class="p-2 text-center text-emerald-600 font-bold">${(opt.pe.oi / 1e5).toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    // Initial data load and polling
+    fetchMarketData();
+    setInterval(fetchMarketData, 30000);
+    // Live clock update for market hours
+    function updateMarketStatus() {
+      const now = new Date();
+      const hours = now.getHours();
+      const mins = now.getMinutes();
+      const isMarketHours = hours >= 9 && (hours < 15 || (hours === 15 && mins <= 30));
+      const label = document.getElementById('market-status-label');
+      if (label) label.textContent = isMarketHours ? 'MARKET LIVE' : 'MARKET CLOSED';
+    }
+    updateMarketStatus();
+    setInterval(updateMarketStatus, 60000);
   </script>
-
-  <!-- TELEMETRY SCRIPT INJECTIONS -->
-  <script src="./live-data.js"></script>
-  <script src="./index.js"></script>
 </body>
 </html>
